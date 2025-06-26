@@ -1,0 +1,43 @@
+<span font='Iosevka Nerd Font 12' foreground='#ebdbb2'><big><b>Hello, Arkboi</b></big></span>
+<span font='Iosevka Nerd Font 10' foreground='#83a598'>What sorta stuff you upto today?</span>
+<span font='Iosevka Nerd Font 10' foreground='#83a598'>wlroots hehe.</span> - Neofetch
+
+<span font='Iosevka Nerd Font 12' foreground='#ebdbb2'><big><b>SwayWM Keybindings</b></big></span>
+
+<span font='Iosevka Nerd Font 10' foreground='#b8bb26'><b>Applications</b></span>
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Return</span> - Open terminal
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + e</span> - Open Emacs
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + d</span> - Open Rofi launcher
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>Ctrl + Alt + Delete</span> - Open nwg-bar (logout)
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Shift + a</span> - Reload Waybar
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + w</span> - Close window
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + c</span> - Change wallpaper
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + v</span> - Clipboard
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + g</span> - Screen Record
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + u</span> - Toggle Dynamic Mode
+
+<span font='Iosevka Nerd Font 10' foreground='#b8bb26'><b>Window Management</b></span>
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + $left / $down / $up / $right</span> - Focus window
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Shift + $left / $down / $up / $right</span> - Move window
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Shift + Space</span> - Toggle floating mode
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Space</span> - Swap focus between tiling and floating
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + f</span> - Fullscreen window
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Shift + e</span> - Exit Sway
+
+<span font='Iosevka Nerd Font 10' foreground='#b8bb26'><b>Workspaces</b></span>
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + [1-10]</span> - Switch workspace
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + Shift + [1-10]</span> - Move window to workspace
+
+<span font='Iosevka Nerd Font 10' foreground='#b8bb26'><b>Resizing (Resize Mode)</b></span>
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$mod + r</span> - Enter resize mode
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>$left / $down / $up / $right</span> - Resize window
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>Return / Escape</span> - Exit resize mode
+
+<span font='Iosevka Nerd Font 10' foreground='#b8bb26'><b>Media</b></span>
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86AudioMute</span> - Mute sound
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86AudioLowerVolume</span> - Decrease volume
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86AudioRaiseVolume</span> - Increase volume
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86AudioMicMute</span> - Mute microphone
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86MonBrightnessDown</span> - Decrease brightness
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>XF86MonBrightnessUp</span> - Increase brightness
+<span font='Iosevka Nerd Font 10' foreground='#fb4934'>Print</span> - Screenshot with grim

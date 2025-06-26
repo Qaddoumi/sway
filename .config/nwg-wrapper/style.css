@@ -1,0 +1,16 @@
+window {
+    background-color: #282828;
+}
+
+#box-outer {
+    background-color: #282828;
+}
+
+#box-inner {
+    background-color: #282828;
+    border-radius: 0px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #8ec07c;
+    padding: 10px;
+}

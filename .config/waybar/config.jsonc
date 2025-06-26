@@ -109,6 +109,7 @@
     "clock": {
         "format": " {:%I:%M %p}", // 12-hour format with am/pm
         "format-alt": " {:%Y-%m-%d %I:%M %p}", // 12-hour format with am/pm
+        "tooltip": true,
         "tooltip-format": "{:%Y %B} {calendar}",
         "calendar": {
             "mode"          : "month",

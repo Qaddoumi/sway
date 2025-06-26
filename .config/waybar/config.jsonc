@@ -79,6 +79,9 @@
         "max-length": 50
     },
     
+    //The `idle_inhibitor` module in Waybar is used to temporarily 
+    // prevent your system from going idle (e.g., screen dimming, 
+    // locking, or suspending) while it is activated.
     "idle_inhibitor": {
         "format": "{icon}",
         "format-icons": {

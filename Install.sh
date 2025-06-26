@@ -15,6 +15,7 @@ sudo pacman -S --needed --noconfirm wofi # Application launcher
 sudo pacman -S --needed --noconfirm mako # Notification daemon (mako-notifier in apt)
 sudo pacman -S --needed --noconfirm kitty # Terminal emulator
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
+sudo pacman -S --needed --noconfirm swaylock # Screen locker for sway
 sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # Portal for Wayland
 sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono
 sudo pacman -S --needed --noconfirm playerctl # Media player control

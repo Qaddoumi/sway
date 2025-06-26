@@ -6,7 +6,7 @@
     
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
     "modules-center": ["sway/window", "custom/playerctl"],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "clock", "custom/mako", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "clock", "custom/dunst", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather"],
 
     "sway/workspaces": {
@@ -95,7 +95,7 @@
         "spacing": 5
     },
 
-    "custom/mako": {
+    /*"custom/mako": {
         "format": " {}",
         "exec": "makoctl list | wc -l",
         "interval": 1,
@@ -104,6 +104,17 @@
         "on-scroll-up": "makoctl history",
         "on-scroll-down": "makoctl history",
         "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll: show history"
+    },*/
+
+    "custom/dunst": {
+        "format": " {}",
+        "exec": "dunstctl count waiting",
+        "interval": 1,
+        "on-click": "dunstctl close",
+        "on-click-right": "dunstctl close-all",
+        "on-scroll-up": "dunstctl history-pop",
+        "on-scroll-down": "dunstctl context",
+        "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
     },
 
     "clock": {

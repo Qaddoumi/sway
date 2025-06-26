@@ -14,7 +14,7 @@ set $right l
 # Your preferred terminal emulator
 set $term kitty
 # Your preferred application launcher
-set $menu rofi -show drun
+set $menu wofi --show drun
 # Your preferred file manager
 set $fileManager nemo
 # Your preferred web browser
@@ -224,7 +224,7 @@ input type:keyboard {
     bindsym $mod+b exec $browser
 
     # Emoji Picker
-    bindsym $mod+s exec rofi -show emoji -modi emoji -matching regex -sorting-method levenshtein
+    #bindsym $mod+s exec rofi -show emoji -modi emoji -matching regex -sorting-method levenshtein
 
     # Clipboard
     #bindsym $mod+v exec cliphist list | rofi -dmenu -p "Clipboard" -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy

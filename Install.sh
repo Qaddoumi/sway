@@ -11,8 +11,8 @@ yay --version
 
 sudo pacman -S --needed --noconfirm sway # Sway window manager
 sudo pacman -S --needed --noconfirm waybar # Status bar for sway
-sudo pacman -S --needed --noconfirm rofi-wayland # Application launcher
-sudo pacman -S --needed --noconfirm mako # Notification daemon
+sudo pacman -S --needed --noconfirm wofi # Application launcher
+sudo pacman -S --needed --noconfirm mako # Notification daemon (mako-notifier in apt)
 sudo pacman -S --needed --noconfirm kitty # Terminal emulator
 sudo pacman -S --needed --noconfirm nwg-bar # Bar for sway
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
@@ -54,6 +54,9 @@ rm -rf ~/sway
 
 # sddm
 sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg 
+if [ -d /usr/share/sddm/themes/sddm-astronaut-theme ]; then
+    sudo rm -rf /usr/share/sddm/themes/sddm-astronaut-theme
+fi
 sudo git clone -b master --depth 1 https://github.com/keyitdev/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
 sudo cp -r /usr/share/sddm/themes/sddm-astronaut-theme/Fonts/* /usr/share/fonts/
 echo -e "[Theme]\nCurrent=sddm-astronaut-theme" | sudo tee /etc/sddm.conf

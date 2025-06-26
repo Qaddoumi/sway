@@ -14,14 +14,13 @@ sudo pacman -S --needed --noconfirm waybar # Status bar for sway
 sudo pacman -S --needed --noconfirm wofi # Application launcher
 sudo pacman -S --needed --noconfirm mako # Notification daemon (mako-notifier in apt)
 sudo pacman -S --needed --noconfirm kitty # Terminal emulator
-sudo pacman -S --needed --noconfirm nwg-bar # Bar for sway
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
 sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # Portal for Wayland
 sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono
 sudo pacman -S --needed --noconfirm playerctl # Media player control
 sudo pacman -S --needed --noconfirm autotiling # Auto-tiling for sway
 sudo pacman -S --needed --noconfirm nemo # File manager
-sudo pacman -S --needed --noconfirm nwg-displays # Display management for sway
+sudo pacman -S --needed --noconfirm kanshi # Automatic Display manager for Wayland
 sudo pacman -S --needed --noconfirm neovim # Text editor
 sudo pacman -S --needed --noconfirm code # Visual Studio Code
 sudo pacman -S --needed --noconfirm brightnessctl # Brightness control
@@ -47,7 +46,7 @@ if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-rm -rf ~/.config/sway ~/.config/waybar ~/.config/rofi ~/.config/kitty ~/.config/mako ~/.config/nwg-wrapper
+rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/mako ~/.config/kanshi
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 

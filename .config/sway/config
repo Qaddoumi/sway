@@ -154,6 +154,9 @@ font pango:Iosevka Nerd Font Mono 12
 ## Sway Automatic Tiling
 exec autotiling -l 2
 
+# Automatically manage display configurations
+exec kanshi
+
 ## Flameshot
 #exec flameshot
 
@@ -172,10 +175,6 @@ exec autotiling -l 2
 
 ## Mako Notification
 exec mako
-
-## NWG Wrapper keybinds
-exec nwg-wrapper -t sway.pango -p right -mr 10
-exec nwg-wrapper -s quick.sh -a end -p left -ml 10 -mb 10 -r 60
 
 ## Autostart Applications
 
@@ -248,7 +247,7 @@ input type:keyboard {
     #bindsym $mod+c exec ~/.config/sway/scripts/wallpaper.sh
 
     # Logout
-    bindsym ctrl+alt+delete exec nwg-bar
+    #bindsym ctrl+alt+delete exec nwg-bar
 
     # Drag floating windows by holding down $mod and left mouse button.
     # Resize them with right mouse button + $mod.

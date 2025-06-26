@@ -105,11 +105,11 @@
         "on-scroll-down": "makoctl history",
         "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll: show history"
     },
-    
+
     "clock": {
         "format": " {:%I:%M %p}", // 12-hour format with am/pm
         "format-alt": " {:%Y-%m-%d %I:%M %p}", // 12-hour format with am/pm
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><big>{calendar}</big></tt>",
+        "tooltip-format": "<big>{:%Y %B}</big> <tt><big>{calendar}</big></tt>",
         "calendar": {
             "mode"          : "month",
             "mode-mon-col"  : 3,
@@ -132,19 +132,19 @@
             "on-scroll-down": "shift_down"
         }
     },
-    
+
     "cpu": {
         "format": " {usage}%",
         "tooltip": false,
         "interval": 1,
         "on-click": "kitty -e htop"
     },
-    
+
     "memory": {
         "format": " {used:0.1f}G/{total:0.1f}G",
         "interval": 1
     },
-    
+
     "temperature": {
         // "thermal-zone": 2,
         // "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",

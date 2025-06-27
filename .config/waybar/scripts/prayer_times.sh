@@ -178,7 +178,7 @@ fi
 
 # Output for Waybar
 if $no_json; then
-    echo "$display_text"
+    echo "$tooltip"
 else
     echo "{\"text\":\"🕌 $display_text\", \"tooltip\":\"$tooltip\", \"class\":\"$class\"}"
 fi

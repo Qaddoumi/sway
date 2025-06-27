@@ -41,6 +41,7 @@ button:hover {
 
 #workspaces button {
     padding: 0 0.4em;
+    margin: 3px 1px;
     background-color: transparent;
     color: #ffffff;
     /* Use box-shadow instead of border so the text isn't offset */
@@ -60,7 +61,7 @@ button:hover {
 }
 
 #workspaces button.urgent {
-    background-color: #eb4d4b;
+    background: linear-gradient(45deg, #eb4d4b, #f53c3c);
 }
 
 #mode {
@@ -74,7 +75,7 @@ button:hover {
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #idle_inhibitor, #tray {
     padding: 0 10px;
-    margin: 6px 3px; 
+    margin: 6px 3px;
     color: #333333;
 }
 

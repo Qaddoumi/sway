@@ -51,16 +51,23 @@ sudo pacman -S --needed --noconfirm bc # Arbitrary precision calculator language
 yay -S --needed --noconfirm google-chrome # Web browser
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}Refreshing font cache...${no_color}"
+
 fc-cache -fv
+
 echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}adding user to necessary groups...${no_color}"
+
 sudo usermod -aG video $USER
 sudo usermod -aG audio $USER
 sudo usermod -aG input $USER
+
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
 echo -e "${green}Cloning and setting up configuration files...${no_color}"
+
 if [ -d ~/sway ]; then
     rm -rf ~/sway
 fi
@@ -94,6 +101,7 @@ echo -e "${blue}==================================================\n============
 # sudo systemctl enable sddm
 
 echo -e "${green}Installing and configuring ly (a lightweight display manager)...${no_color}"
+
 # ly
 yay -S --needed --noconfirm ly
 sudo pacman -S --needed --noconfirm cmatrix

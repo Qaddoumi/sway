@@ -92,8 +92,6 @@ button:hover {
     background-color: #2d3748;
     color: #e2e8f0;
     border-radius: 8px;
-    padding: 0 10px;
-    margin: 0 5px;
 }
 
 #custom-prayer.current-prayer {

@@ -61,7 +61,8 @@ button:hover {
 }
 
 #workspaces button.urgent {
-    background: linear-gradient(45deg, #eb4d4b, #f53c3c);
+    border-radius: 5px;
+    background: linear-gradient(45deg, #b87a79, #f53c3c);
 }
 
 #mode {
@@ -73,7 +74,7 @@ button:hover {
 #mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray , #custom-dunst, #custom-hijri{
+#idle_inhibitor, #tray, #custom-mako, #custom-dunst, #custom-hijri{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
@@ -169,7 +170,8 @@ label:focus {
 }
 
 #custom-dunst,
-#custom-hijri{
+#custom-hijri,
+#custom-mako{
     background-color: #bbccdd;
     color: #333333;
 }

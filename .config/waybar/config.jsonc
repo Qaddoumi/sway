@@ -152,7 +152,7 @@
         "interval": 60,
         "tooltip": true,
         //"on-click": "notify-send \"$(~/.config/waybar/scripts/prayer_times.sh | jq -r '.tooltip' | sed 's/\\\\n/\n/g')\""
-        "on-click": "notify-send \"$(~/.config/waybar/scripts/prayer_times.sh nojson)\""
+        "on-click": "notify-send \"$(~/.config/waybar/scripts/prayer_times.sh nojson | sed 's/\\\\n/\n/g')\""
     },
 
     "cpu": {

@@ -173,7 +173,7 @@ exec kanshi
 ## Waybar
 #exec waybar
 
-## Mako Notification
+## Mako/dunst Notification
 #exec mako
 exec dunst
 

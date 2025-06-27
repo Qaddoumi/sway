@@ -55,7 +55,7 @@
         "exec": "uptime -p | sed 's/up //; s/ days/d/; s/ hours/h/; s/ minutes/m/'",
         "interval": 60
     },
-    
+
     "sway/scratchpad": {
         "format": "{icon} {count}",
         "show-empty": false,
@@ -63,7 +63,7 @@
         "tooltip": true,
         "tooltip-format": "{app}: {title}"
     },
-    
+
     "sway/window": {
         "format": "{}",
         "max-length": 50
@@ -79,7 +79,7 @@
         },
         "tooltip": true
     },
-    
+
     "tray": {
         "icon-size": 18,
         "spacing": 5

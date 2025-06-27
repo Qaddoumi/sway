@@ -73,7 +73,7 @@ button:hover {
 #mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray {
+#idle_inhibitor, #tray , #custom-dunst, #custom-hijri{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
@@ -166,6 +166,12 @@ label:focus {
 #disk {
     background-color: #964b00;
     border-bottom-color: #7dcfff;
+}
+
+#custom-dunst,
+#custom-hijri{
+    background-color: #bbccdd;
+    color: #333333;
 }
 
 #backlight {

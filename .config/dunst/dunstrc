@@ -29,7 +29,7 @@
     sort = yes
     
     # Font
-    font = JetBrainsMono Nerd Font 11
+    font = "JetBrainsMono Nerd Font" 11
     line_height = 0
     markup = full
     format = "<b>%s</b>\n%b"

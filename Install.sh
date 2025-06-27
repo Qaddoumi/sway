@@ -44,6 +44,7 @@ sudo pacman -S --needed --noconfirm code # Visual Studio Code
 sudo pacman -S --needed --noconfirm brightnessctl # Brightness control
 sudo pacman -S --needed --noconfirm s-tui # Terminal UI for monitoring CPU
 sudo pacman -S --needed --noconfirm gdu # Disk usage analyzer
+sudo pacman -S --needed --noconfirm jq # JSON processor
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome # Web browser
@@ -69,6 +70,9 @@ fi
 rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
+
+chmod +x ~/.config/waybar/scripts/hijri_clock.sh
+# TODO: give permission to run other scripts.
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

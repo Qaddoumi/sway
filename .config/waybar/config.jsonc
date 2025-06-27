@@ -6,7 +6,7 @@
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
     "modules-center": ["sway/window", "custom/playerctl"],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "clock", "custom/dunst", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/hijri", "clock", "custom/dunst", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather"],
 
     "sway/workspaces": {
@@ -133,6 +133,16 @@
          //   "on-scroll-up": "shift_up",
          //   "on-scroll-down": "shift_down"
         //}
+    },
+
+    "custom/hijri": {
+        //"on-click": "kitty -e calcurse -c"
+        "format": "󰃭",
+        "exec": "~/.config/waybar/scripts/hijri_clock.sh",
+        "return-type": "json",
+        "interval": 3600,
+        "tooltip": "{tooltip}",
+        "tooltip-format": "{}"
     },
 
     "cpu": {

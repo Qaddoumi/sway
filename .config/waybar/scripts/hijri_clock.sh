@@ -93,8 +93,28 @@ if [[ "$HIJRI_DATE" == "N/A" ]]; then
     HIJRI_DATE=$(calculate_hijri)
 fi
 
+# Hijri month names (1-based index)
+HIJRI_MONTHS=(Muharram Safar "Rabi' al-awwal" "Rabi' al-thani" "Jumada al-awwal" "Jumada al-thani" Rajab Sha'ban Ramadan Shawwal "Dhu al-Qi'dah" "Dhu al-Hijjah")
+
+# Parse Hijri date into day, month, year
+if [[ "$HIJRI_DATE" =~ ^([0-9]{1,2})[/-]([0-9]{1,2})[/-]([0-9]{2,4})$ ]]; then
+    hijri_day="${BASH_REMATCH[1]}"
+    hijri_month="${BASH_REMATCH[2]}"
+    hijri_year="${BASH_REMATCH[3]}"
+    hijri_month_name="${HIJRI_MONTHS[$((hijri_month-1))]}"
+    HIJRI_FORMATTED="$hijri_day $hijri_month_name $hijri_year"
+else
+    HIJRI_FORMATTED="$HIJRI_DATE"
+fi
+
+# Get day name and Gregorian month name
+DAY_NAME=$(date "+%A")
+GREG_MONTH_NAME=$(date "+%B")
+GREG_DATE=$(date "+%d-%m-%Y")
+GREG_FORMATTED="$DAY_NAME, $GREG_MONTH_NAME $GREG_DATE"
+
 # Get regular time
 REGULAR_TIME=$(date "+%I:%M %p")
 
 # Output for Waybar
-echo "{\"text\":\"$REGULAR_TIME\", \"tooltip\":\"Gregorian: $(date '+%d-%m-%Y')\\nHijri:     $HIJRI_DATE\"}"
+echo "{\"text\":\"$DAY_NAME $REGULAR_TIME\", \"tooltip\":\"Gregorian: $GREG_FORMATTED\\nHijri:     $HIJRI_FORMATTED\"}"

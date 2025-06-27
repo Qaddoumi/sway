@@ -1,6 +1,21 @@
 #!/bin/bash
 
+set -euo pipefail
 
+# Color codes
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[1;33m'
+blue='\033[0;34m'
+no_color='\033[0m' # rest the color to default
+
+echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
+echo -e "${green}Installing yay (Yet Another Yaourt)...${no_color}"
+
+echo -e "${green}Starting installation...${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go
 git clone https://aur.archlinux.org/yay.git
 cd yay
@@ -8,7 +23,9 @@ makepkg -si
 cd .. && rm -rf yay
 yay --version
 
+echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}Installing Sway and related packages...${no_color}"
 sudo pacman -S --needed --noconfirm sway # Sway window manager
 sudo pacman -S --needed --noconfirm waybar # Status bar for sway
 sudo pacman -S --needed --noconfirm wofi # Application launcher
@@ -31,15 +48,17 @@ sudo pacman -S --needed --noconfirm gdu # Disk usage analyzer
 
 yay -S --needed --noconfirm google-chrome # Web browser
 
-
+echo -e "${blue}==================================================\n==================================================${no_color}"
+echo -e "${green}Refreshing font cache...${no_color}"
 fc-cache -fv
-
-
+echo -e "${blue}==================================================\n==================================================${no_color}"
+echo -e "${green}adding user to necessary groups...${no_color}"
 sudo usermod -aG video $USER
 sudo usermod -aG audio $USER
 sudo usermod -aG input $USER
+echo -e "${blue}==================================================\n==================================================${no_color}"
 
-
+echo -e "${green}Cloning and setting up configuration files...${no_color}"
 if [ -d ~/sway ]; then
     rm -rf ~/sway
 fi
@@ -51,19 +70,29 @@ rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 
+echo -e "${blue}==================================================\n==================================================${no_color}"
 
 # sddm
-sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg 
-if [ -d /usr/share/sddm/themes/sddm-astronaut-theme ]; then
-    sudo rm -rf /usr/share/sddm/themes/sddm-astronaut-theme
-fi
-sudo git clone -b master --depth 1 https://github.com/keyitdev/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
-sudo cp -r /usr/share/sddm/themes/sddm-astronaut-theme/Fonts/* /usr/share/fonts/
-echo -e "[Theme]\nCurrent=sddm-astronaut-theme" | sudo tee /etc/sddm.conf
-sudo mkdir -p /etc/sddm.conf.d
-echo -e "[General]\nInputMethod=qtvirtualkeyboard" | sudo tee /etc/sddm.conf.d/virtualkbd.conf
-current_sddm_theme=$(grep "ConfigFile=" /usr/share/sddm/themes/sddm-astronaut-theme/metadata.desktop | cut -d'=' -f2 | cut -d'/' -f2 | cut -d'.' -f1)
-sudo sed -i "s/ConfigFile=Themes\/${current_sddm_theme}.conf/ConfigFile=Themes\/purple_leaves.conf/" /usr/share/sddm/themes/sddm-astronaut-theme/metadata.desktop
-sudo systemctl disable display-manager.service
-sudo systemctl enable sddm
+# sudo pacman -S --needed --noconfirm sddm qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg 
+# if [ -d /usr/share/sddm/themes/sddm-astronaut-theme ]; then
+#     sudo rm -rf /usr/share/sddm/themes/sddm-astronaut-theme
+# fi
+# sudo git clone -b master --depth 1 https://github.com/keyitdev/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
+# sudo cp -r /usr/share/sddm/themes/sddm-astronaut-theme/Fonts/* /usr/share/fonts/
+# echo -e "[Theme]\nCurrent=sddm-astronaut-theme" | sudo tee /etc/sddm.conf
+# sudo mkdir -p /etc/sddm.conf.d
+# echo -e "[General]\nInputMethod=qtvirtualkeyboard" | sudo tee /etc/sddm.conf.d/virtualkbd.conf
+# current_sddm_theme=$(grep "ConfigFile=" /usr/share/sddm/themes/sddm-astronaut-theme/metadata.desktop | cut -d'=' -f2 | cut -d'/' -f2 | cut -d'.' -f1)
+# sudo sed -i "s/ConfigFile=Themes\/${current_sddm_theme}.conf/ConfigFile=Themes\/purple_leaves.conf/" /usr/share/sddm/themes/sddm-astronaut-theme/metadata.desktop
+# sudo systemctl disable display-manager.service
+# sudo systemctl enable sddm
 
+echo -e "${green}Installing and configuring ly (a lightweight display manager)...${no_color}"
+# ly
+yay -S --needed --noconfirm ly
+sudo pacman -S --needed --noconfirm cmatrix
+sudo systemctl disable display-manager.service
+sudo systemctl enable ly.service
+# Edit the configuration file /etc/ly/config.ini
+sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini
+echo -e "${blue}==================================================\n==================================================${no_color}"

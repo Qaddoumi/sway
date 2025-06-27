@@ -110,11 +110,9 @@ fi
 # Get day name and Gregorian month name
 DAY_NAME=$(date "+%A")
 GREG_MONTH_NAME=$(date "+%B")
-GREG_DATE=$(date "+%d-%m-%Y")
-GREG_FORMATTED="$DAY_NAME, $GREG_MONTH_NAME $GREG_DATE"
 
 # Get regular time
 REGULAR_TIME=$(date "+%I:%M %p")
 
 # Output for Waybar
-echo "{\"text\":\"$DAY_NAME $REGULAR_TIME\", \"tooltip\":\"Gregorian: $GREG_FORMATTED\\nHijri:     $HIJRI_FORMATTED\"}"
+echo "{\"tooltip\":\"$DAY_NAME \\nGregorian: $GREG_MONTH_NAME $(date '+%d-%m-%Y')\\nHijri:     $hijri_month_name $HIJRI_DATE\"}"

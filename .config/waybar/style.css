@@ -82,14 +82,10 @@ button:hover {
 }
 
 #custom-hijri,
+#custom-prayer,
 #custom-dunst,
 #custom-mako {
     background-color: #bbccdd;
-    color: #333333;
-}
-
-#custom-prayer {
-    background-color: #9ae6b4;
     color: #333333;
 }
 
@@ -100,8 +96,8 @@ button:hover {
 }
 
 #custom-prayer.next-prayer {
-    background-color: #2a4365;
-    color: #90cdf4;
+    background-color: #9ae6b4;
+    color: #333333;
 }
 
 @keyframes pulse {

@@ -94,7 +94,7 @@ if [[ "$HIJRI_DATE" == "N/A" ]]; then
 fi
 
 # Hijri month names (1-based index)
-HIJRI_MONTHS=(Muharram Safar "Rabi' al-awwal" "Rabi' al-thani" "Jumada al-awwal" "Jumada al-thani" Rajab Sha'ban Ramadan Shawwal "Dhu al-Qi'dah" "Dhu al-Hijjah")
+HIJRI_MONTHS=("Muharram" "Safar" "Rabi' al-awwal" "Rabi' al-thani" "Jumada al-awwal" "Jumada al-thani" "Rajab" "Sha'ban" "Ramadan" "Shawwal" "Dhu al-Qi'dah" "Dhu al-Hijjah")
 
 # Parse Hijri date into day, month, year
 if [[ "$HIJRI_DATE" =~ ^([0-9]{1,2})[/-]([0-9]{1,2})[/-]([0-9]{2,4})$ ]]; then
@@ -115,4 +115,4 @@ GREG_MONTH_NAME=$(date "+%B")
 REGULAR_TIME=$(date "+%I:%M %p")
 
 # Output for Waybar
-echo "{\"tooltip\":\"$DAY_NAME \\nGregorian: $GREG_MONTH_NAME $(date '+%d-%m-%Y')\\nHijri:     $hijri_month_name $HIJRI_DATE\"}"
+echo "{\"tooltip\":\"$DAY_NAME \\nGregorian: $GREG_MONTH_NAME $(date '+%d-%m-%Y')\\nHijri: $hijri_month_name $HIJRI_DATE\"}"

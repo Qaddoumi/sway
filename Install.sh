@@ -45,6 +45,7 @@ sudo pacman -S --needed --noconfirm brightnessctl # Brightness control
 sudo pacman -S --needed --noconfirm s-tui # Terminal UI for monitoring CPU
 sudo pacman -S --needed --noconfirm gdu # Disk usage analyzer
 sudo pacman -S --needed --noconfirm jq # JSON processor
+sudo pacman -S --needed --noconfirm bc # Arbitrary precision calculator language
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome # Web browser
@@ -72,6 +73,7 @@ mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 
 chmod +x ~/.config/waybar/scripts/hijri_clock.sh
+chmod +x ~/.config/waybar/scripts/prayer_times.sh
 # TODO: give permission to run other scripts.
 
 echo -e "${blue}==================================================\n==================================================${no_color}"

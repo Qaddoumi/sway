@@ -6,7 +6,7 @@
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
     "modules-center": ["sway/window", "custom/playerctl"],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/hijri", "clock", "custom/dunst", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather"],
 
     "sway/workspaces": {
@@ -108,7 +108,7 @@
     },
 
     "clock": {
-        "format": " {:%I:%M %p}", // 12-hour format with am/pm
+        "format": "{:%I:%M %p}", // 12-hour format with am/pm
         "format-alt": " {:%Y-%m-%d %I:%M %p}", // 12-hour format with am/pm
         "tooltip": true,
         "tooltip-format": "{:%Y %B} {calendar}",
@@ -143,6 +143,15 @@
         "interval": 3600,
         "tooltip": "{tooltip}",
         "tooltip-format": "{}"
+    },
+
+    "custom/prayer": {
+        "format": "{}",
+        "exec": "~/.config/waybar/scripts/prayer_times.sh",
+        "return-type": "json",
+        "interval": 60,
+        "tooltip": true,
+        "on-click": "notify-send 'Prayer Times' \"$(~/.config/waybar/scripts/prayer_times.sh | jq -r '.tooltip' | sed 's/\\\\n/\n/g')\""
     },
 
     "cpu": {

@@ -74,10 +74,51 @@ button:hover {
 #mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray, #custom-mako, #custom-dunst, #custom-hijri{
+#idle_inhibitor, #tray, #custom-mako, #custom-dunst, #custom-hijri,
+#custom-prayer{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
+}
+
+#custom-hijri,
+#custom-dunst,
+#custom-mako {
+    background-color: #bbccdd;
+    color: #333333;
+}
+
+#custom-prayer {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 0 10px;
+    margin: 0 5px;
+}
+
+#custom-prayer.current-prayer {
+    background-color: #22543d;
+    color: #9ae6b4;
+    animation: pulse 2s infinite;
+}
+
+#custom-prayer.next-prayer {
+    background-color: #2a4365;
+    color: #90cdf4;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 #window,
@@ -167,13 +208,6 @@ label:focus {
 #disk {
     background-color: #964b00;
     border-bottom-color: #7dcfff;
-}
-
-#custom-dunst,
-#custom-hijri,
-#custom-mako{
-    background-color: #bbccdd;
-    color: #333333;
 }
 
 #backlight {

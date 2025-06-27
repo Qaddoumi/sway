@@ -1,0 +1,31 @@
+{
+    "clock": {
+        "format": "{:%I:%M %p}", // 12-hour format with am/pm
+        "format-alt": " {:%Y-%m-%d %I:%M %p}", // 12-hour format with am/pm
+        "tooltip": true,
+        "tooltip-format": "{:%Y %B} {calendar}\n<b>Hijri:</b> $(python3 -c \"from hijri_converter import convert; from datetime import date; today = date.today(); hijri = convert.Gregorian(today.year, today.month, today.day).to_hijri(); print(f'{hijri.day}/{hijri.month}/{hijri.year}')\")",
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "on-scroll": 1,
+            "on-click-right": "mode",
+            "format": {
+                "months": "<span color='#d3c6aa'><b>{}</b></span>",
+                "days": "<span color='#e67e80'>{}</span>",
+                "weeks": "<span color='#a7c080'><b>W{}</b></span>",
+                "weekdays": "<span color='#7fbbb3'><b>{}</b></span>",
+                "today": "<span color='#dbbc7f'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+    "custom/hijri": {
+        //"on-click": "kitty -e calcurse -c"
+        "format": "󰃭",
+        "exec": "~/.config/waybar/scripts/hijri_clock.sh",
+        "return-type": "json",
+        "interval": 3600,
+        "tooltip": "{tooltip}",
+        "tooltip-format": "{}"
+    }
+}

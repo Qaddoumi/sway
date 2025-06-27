@@ -97,4 +97,4 @@ fi
 REGULAR_TIME=$(date "+%I:%M %p")
 
 # Output for Waybar
-echo "{\"text\":\"$REGULAR_TIME\", \"tooltip\":\"Gregorian: $(date '+%d-%m-%Y')\\nHijri:    $HIJRI_DATE\"}"
+echo "{\"text\":\"$REGULAR_TIME\", \"tooltip\":\"Gregorian: $(date '+%d-%m-%Y')\\nHijri:     $HIJRI_DATE\"}"

@@ -89,9 +89,8 @@ button:hover {
 }
 
 #custom-prayer {
-    background-color: #3c4e6d;
-    color: #e2e8f0;
-    border-radius: 8px;
+    background-color: #9ae6b4;
+    color: #333333;
 }
 
 #custom-prayer.current-prayer {

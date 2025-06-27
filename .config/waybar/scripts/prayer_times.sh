@@ -1,5 +1,13 @@
 #!/bin/bash
 
+no_json=false
+for arg in "$@"; do
+    if [[ "$arg" == "nojson" ]]; then
+        no_json=true
+        break
+    fi
+done
+
 # Configuration - Update these with your location
 LATITUDE="32.072" # Zarqa, Jordan latitude
 LONGITUDE="36.088" # Zarqa, Jordan longitude
@@ -169,4 +177,8 @@ else
 fi
 
 # Output for Waybar
-echo "{\"text\":\"🕌 $display_text\", \"tooltip\":\"$tooltip\", \"class\":\"$class\"}"
+if $no_json; then
+    echo "$display_text"
+else
+    echo "{\"text\":\"🕌 $display_text\", \"tooltip\":\"$tooltip\", \"class\":\"$class\"}"
+fi

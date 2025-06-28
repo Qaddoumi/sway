@@ -75,7 +75,7 @@ button:hover {
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #idle_inhibitor, #tray, #custom-mako, #custom-dunst, #custom-hijri,
-#custom-prayer{
+#custom-prayer, #custom-power{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
@@ -83,6 +83,7 @@ button:hover {
 
 #custom-hijri,
 #custom-prayer,
+#custom-power,
 #custom-dunst,
 #custom-mako {
     background-color: #bbccdd;

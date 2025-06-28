@@ -6,7 +6,7 @@
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
     "modules-center": ["sway/window", "custom/playerctl"],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather"],
 
     "sway/workspaces": {
@@ -152,6 +152,12 @@
         "interval": 60,
         "tooltip": true,
         "on-click": "notify-send \"**************\" \"$(~/.config/waybar/scripts/prayer_times.sh | jq -r '.tooltip')\""
+    },
+
+    "custom/power": {
+        "format": "⏻ ",
+        "tooltip": false,
+        "on-click": "~/.config/waybar/scripts/powermenu.sh"
     },
 
     "cpu": {

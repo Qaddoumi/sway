@@ -12,7 +12,7 @@ rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 
-chmod +x ~/.config/waybar/scripts/hijri_clock.sh
-chmod +x ~/.config/waybar/scripts/prayer_times.sh
+chmod +x ~/.config/waybar/scripts/*.sh
+chmod +x ~/.config/sway/scripts/*.sh
 
 swaymsg reload

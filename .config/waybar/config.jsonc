@@ -85,17 +85,6 @@
         "spacing": 5
     },
 
-    /*"custom/mako": {
-        "format": " {}",
-        "exec": "makoctl list | wc -l",
-        "interval": 1,
-        "on-click": "makoctl dismiss",
-        "on-click-right": "makoctl dismiss --all",
-        "on-scroll-up": "makoctl history",
-        "on-scroll-down": "makoctl history",
-        "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll: show history"
-    },*/
-
     "custom/dunst": {
         "format": " {}",
         "exec": "dunstctl count waiting",
@@ -172,7 +161,7 @@
         "interval": 1
     },
 
-    "temperature": {
+    "temperature": { // TODO: fix this as currently it's not working.
         // "thermal-zone": 2,
         // "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",
         "critical-threshold": 80,
@@ -234,7 +223,7 @@
             "car": "",
             "default": ["", "", ""]
         },
-        "on-click": "pavucontrol",
+        "on-click": "pavucontrol",// TODO: fix this as currently it's no working
         "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
         "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2%",
         "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2%"

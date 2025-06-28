@@ -74,7 +74,7 @@ button:hover {
 #mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray, #custom-mako, #custom-dunst, #custom-hijri,
+#idle_inhibitor, #tray, #custom-dunst, #custom-hijri,
 #custom-prayer, #custom-power{
     padding: 0 10px;
     margin: 6px 3px;
@@ -84,8 +84,7 @@ button:hover {
 #custom-hijri,
 #custom-prayer,
 #custom-power,
-#custom-dunst,
-#custom-mako {
+#custom-dunst {
     background-color: #bbccdd;
     color: #333333;
 }

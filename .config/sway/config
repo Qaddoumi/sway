@@ -175,8 +175,7 @@ exec_always pkill kanshi; kanshi
 ## Waybar
 #exec waybar
 
-## Mako/dunst Notification
-#exec mako
+## dunst Notification
 exec dunst
 
 ## Autostart Applications
@@ -234,8 +233,8 @@ input type:keyboard {
     # Lock
     bindsym $mod+shift+t exec $lock
 
-    # Tiling Modes
-    bindsym $mod+u exec ~/.config/sway/scripts/tiling.sh
+    # Tiling Modes uses autotiling
+    #bindsym $mod+u exec ~/.config/sway/scripts/tiling.sh
 
     # Screen Record
     bindsym $mod+g exec ~/.config/sway/scripts/prompt-record.sh
@@ -267,13 +266,6 @@ input type:keyboard {
     # Exit sway (logs you out of your Wayland session)
     bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
 #
-
-# Dismiss all notifications
-#bindsym $mod+n exec makoctl dismiss --all
-# Dismiss the most recent notification
-#bindsym $mod+Shift+n exec makoctl dismiss
-# Show notification history (requires a terminal)
-#bindsym $mod+m exec makoctl history
 
 # Moving around:
 #

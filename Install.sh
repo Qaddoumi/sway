@@ -13,9 +13,8 @@ echo -e "${green} ******************* Sway Installation Script *****************
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Installing yay (Yet Another Yaourt)...${no_color}"
+echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 
-echo -e "${green}Starting installation...${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go
 git clone https://aur.archlinux.org/yay.git
 cd yay
@@ -25,7 +24,7 @@ yay --version
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Installing Sway and related packages...${no_color}"
+echo -e "${green}Installing Sway and related packages${no_color}"
 sudo pacman -S --needed --noconfirm sway # Sway window manager
 sudo pacman -S --needed --noconfirm waybar # Status bar for sway
 sudo pacman -S --needed --noconfirm wofi # Application launcher

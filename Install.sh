@@ -34,7 +34,6 @@ sudo pacman -S --needed --noconfirm kitty # Terminal emulator
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
 sudo pacman -S --needed --noconfirm swaylock # Screen locker for sway
 sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # Portal for Wayland
-sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono
 sudo pacman -S --needed --noconfirm playerctl # Media player control
 sudo pacman -S --needed --noconfirm autotiling # Auto-tiling for sway
 sudo pacman -S --needed --noconfirm nemo # File manager
@@ -52,8 +51,12 @@ yay -S --needed --noconfirm google-chrome # Web browser
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Refreshing font cache...${no_color}"
+echo -e "${green}Installing fonts${no_color}"
 
+sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono
+sudo pacman -S --needed --noconfirm noto-fonts-emoji # Emoji font
+
+echo -e "${green}Refreshing font cache${no_color}"
 fc-cache -fv
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
@@ -66,7 +69,7 @@ sudo usermod -aG input $USER
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Cloning and setting up configuration files...${no_color}"
+echo -e "${green}Cloning and setting up configuration files${no_color}"
 
 if [ -d ~/sway ]; then
     rm -rf ~/sway
@@ -79,8 +82,9 @@ rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 
-chmod +x ~/.config/waybar/scripts/hijri_clock.sh
-chmod +x ~/.config/waybar/scripts/prayer_times.sh
+echo -e "${green}Setting up permissions for configuration files${no_color}"
+chmod +x ~/.config/waybar/scripts/*.sh
+chmod +x ~/.config/sway/scripts/*.sh
 # TODO: give permission to run other scripts.
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
@@ -100,7 +104,7 @@ echo -e "${blue}==================================================\n============
 # sudo systemctl disable display-manager.service
 # sudo systemctl enable sddm
 
-echo -e "${green}Installing and configuring ly (a lightweight display manager)...${no_color}"
+echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
 
 # ly
 yay -S --needed --noconfirm ly

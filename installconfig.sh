@@ -17,7 +17,9 @@ chmod +x ~/.config/sway/scripts/*.sh
 
 swaymsg reload
 
-
-if ! grep -q "source ~/.config/oh-my-posh/poshthemes/gmay.omp.json" ~/.bashrc; then
-    echo 'eval "$(oh-my-posh init bash --config ~/.config/oh-my-posh/poshthemes/gmay.omp.json)"' >> ~/.bashrc
+# if ! grep -q 'export PATH="$PATH:$HOME/.local/bin"' ~/.bashrc; then
+#     echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+# fi
+if ! grep -q "source ~/.config/oh-my-posh/gmay.omp.json" ~/.bashrc; then
+    echo 'eval "$(oh-my-posh init bash --config ~/.config/oh-my-posh/gmay.omp.json)"' >> ~/.bashrc
 fi

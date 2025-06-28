@@ -91,7 +91,7 @@ button:hover {
 }
 
 #custom-power {
-    background: linear-gradient(90deg, rgba(230, 18, 18, 1) 29%, rgba(12, 242, 108, 1) 82%);
+    background: linear-gradient(45deg, #3F3F3F, rgba(230, 18, 18, 1));
     color: #ffffff;
 }
 

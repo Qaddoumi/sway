@@ -152,10 +152,11 @@ exec swayidle -w \
 font pango:JetBrainsMono Nerd Font 12
 
 ## Sway Automatic Tiling
-exec autotiling -l 2
+# Automatically chooses split direction based on the current container's aspect ratio
+# Wide containers get vertical splits, tall containers get horizontal splits
+#exec autotiling -l 2
 
 # Automatically manage display configurations
-#exec kanshi
 exec_always pkill kanshi; kanshi
 
 ## Flameshot

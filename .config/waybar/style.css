@@ -90,6 +90,11 @@ button:hover {
     color: #333333;
 }
 
+#custom-power {
+    background: linear-gradient(90deg, rgba(230, 18, 18, 1) 29%, rgba(12, 242, 108, 1) 82%);
+    color: #ffffff;
+}
+
 #custom-prayer.current-prayer {
     background-color: #22543d;
     color: #9ae6b4;

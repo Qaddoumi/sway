@@ -47,6 +47,7 @@ sudo pacman -S --needed --noconfirm bc # Arbitrary precision calculator language
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome # Web browser
+yay -S --needed --noconfirm oh-my-posh # Theme engine for terminal
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

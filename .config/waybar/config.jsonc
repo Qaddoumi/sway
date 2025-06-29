@@ -1,7 +1,7 @@
 {
     "layer": "top", // Waybar at top layer
     "position": "top", // Waybar position (top|bottom|left|right)
-    "height": 34, // Waybar height (to be removed for auto height)
+    //"height": 34, // Waybar height (to be removed for auto height)
     "spacing": 1, // Gaps between modules (6px)
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window", "custom/playerctl"],
@@ -201,11 +201,11 @@
     //       with the app that currently uses the internet , and the app that
     //       downloaded the most.
     "network": {
-        "format-wifi": " {essid} ({signalStrength}%)",
-        "format-ethernet": " {ifname}",
-        "format-linked": " {ifname} (No IP)",
+        "format-wifi": " {essid} ({signalStrength}%) {bandwidthDownBytes} {bandwidthUpBytes}",
+        "format-ethernet": " {ifname} {bandwidthDownBytes} {bandwidthUpBytes}",
+        "format-linked": " {ifname} (No IP) {bandwidthDownBytes} {bandwidthUpBytes}",
         "format-disconnected": " Disconnected",
-        "tooltip-format": "{ifname}: {ipaddr}/{cidr}\n*****************\nDownload: {bandwidthDownBytes}\nUpload:   {bandwidthUpBytes}\n*****************\nTotal speed: {bandwidthTotalBytes}",
+        "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
         "on-click": "kitty -e nmtui"
     },
 

@@ -205,7 +205,7 @@
         "format-ethernet": " {ifname}",
         "format-linked": " {ifname} (No IP)",
         "format-disconnected": " Disconnected",
-        "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
+        "tooltip-format": "{ifname}: {ipaddr}/{cidr}\\n*****************\\nDownload: {bandwidthDownBytes}\\nUpload: {bandwidthUpBytes}\\n*****************\\nTotal speed : {bandwidthTotalBytes}",
         "on-click": "kitty -e nmtui"
     },
 

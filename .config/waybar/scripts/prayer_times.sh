@@ -180,5 +180,5 @@ fi
 if $no_json; then
     echo "$tooltip"
 else
-    echo "{\"text\":\"🕌 $display_text\", \"tooltip\":\"$tooltip\", \"class\":\"$class\"}"
+    echo "{\"text\":\"󱠧 $display_text\", \"tooltip\":\"$tooltip\", \"class\":\"$class\"}"
 fi

@@ -129,7 +129,7 @@ button:hover {
 #custom-player.Paused {
     color: #f0932b;
     border-bottom-color: #f0932b;
-    background-attachment: #f0eeed;
+    background-color: #f0eeed;
 }
 
 #window,

@@ -130,11 +130,6 @@ button:hover {
     background-color: #f0932b;
 }
 
-#custom-player:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
-}
-
 @keyframes pulse-playing {
     0% {
         opacity: 0.8;

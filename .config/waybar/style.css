@@ -123,11 +123,13 @@ button:hover {
 #custom-player.Playing {
     color: #7dcfff;
     border-bottom-color: #7dcfff;
+    background-color :#10520d;
 }
 
 #custom-player.Paused {
     color: #f0932b;
     border-bottom-color: #f0932b;
+    background-attachment: #f0eeed;
 }
 
 #window,

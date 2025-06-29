@@ -6,7 +6,7 @@
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window"],
     "modules-center": [],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "custom/player", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather", "custom/playerctl"],
 
     "sway/workspaces": {
@@ -33,6 +33,21 @@
             "Paused": "",
             "Stopped": ""
         }
+    },
+
+    "custom/player": {
+        "format": "{}",
+        "exec": "~/.config/waybar/scripts/player.sh",
+        "return-type": "json",
+        "interval": 1,
+        "on-click": "playerctl play-pause",
+        "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2%",
+        "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2%",
+        "on-click-middle": "pavucontrol",
+        "on-double-click": "playerctl next",
+        "on-double-click-right": "playerctl previous",
+        "tooltip": true
     },
 
     "custom/weather": {
@@ -235,12 +250,7 @@
         "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
         "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2%",
         "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2%",
-        "on-click-middle": "pavucontrol",
-        "tooltip": true,
-        "return-type": "json",
-        "on-double-click": "playerctl next",
-        "on-double-click-right": "playerctl previous",
-        "exec": "~/.config/waybar/scripts/player.sh"
+        "on-click-middle": "pavucontrol"
     },
 
     "disk": {

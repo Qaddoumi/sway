@@ -121,12 +121,10 @@ button:hover {
 }
 
 #custom-player.Playing {
-    border-bottom: 2px solid #7dcfff;
     background-color: #38a832;
 }
 
 #custom-player.Paused {
-    border-bottom: 2px solid #7dcfff;
     background-color: #f0932b;
 }
 

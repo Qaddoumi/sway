@@ -121,23 +121,13 @@ button:hover {
 }
 
 #custom-player.Playing {
-    border-bottom-color: #7dcfff;
+    border-bottom: 2px solid #7dcfff;
     background-color: #38a832;
-    animation: pulse-playing 2s ease-in-out infinite alternate;
 }
 
 #custom-player.Paused {
+    border-bottom: 2px solid #7dcfff;
     background-color: #f0932b;
-}
-
-@keyframes pulse-playing {
-    0% {
-        opacity: 0.8;
-    }
-
-    100% {
-        opacity: 1.0;
-    }
 }
 
 #window,

@@ -206,7 +206,9 @@
         "format-linked": " {ifname} (No IP) {bandwidthDownBytes} {bandwidthUpBytes}",
         "format-disconnected": " Disconnected",
         "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
-        "on-click": "kitty -e nmtui"
+        "format-alt": "  {bandwidthDownBits}  {bandwidthUpBits} ",
+        "interval": 1, // Polling rate (default: 1s)
+        "on-click-middle": "kitty -e nmtui"
     },
 
     "pulseaudio": {

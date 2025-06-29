@@ -202,8 +202,8 @@
     //       downloaded the most.
     "network": {
         "format-wifi": " {essid} ({signalStrength}%)",
-        "format-ethernet": " {ifname} {bandwidthDownBytes} {bandwidthUpBytes}",
-        "format-linked": " {ifname} (No IP) {bandwidthDownBytes} {bandwidthUpBytes}",
+        "format-ethernet": " {ifname}",
+        "format-linked": " {ifname} (No IP)",
         "format-disconnected": " Disconnected",
         "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
         "format-alt": " {bandwidthDownBits}  {bandwidthUpBits}",

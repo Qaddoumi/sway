@@ -75,7 +75,8 @@ button:hover {
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #idle_inhibitor, #tray, #custom-dunst, #custom-hijri,
-#custom-prayer, #custom-power, #custom-player.none{
+#custom-prayer, #custom-power, #custom-player.none,
+#custom-player.Playing, #custom-player.Paused{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
@@ -87,7 +88,6 @@ button:hover {
 #custom-power,
 #custom-dunst {
     background-color: #bbccdd;
-    color: #333333;
 }
 
 #custom-power {

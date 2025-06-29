@@ -7,7 +7,7 @@
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window"],
     "modules-center": [],
     "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "custom/player", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
-    "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather", "custom/playerctl"],
+    "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather", "pulseaudio"],
 
     "sway/workspaces": {
         "disable-scroll": true,
@@ -17,22 +17,6 @@
 
     "sway/mode": {
         "format": "<span style=\"italic\">{}</span>"
-    },
-
-    "custom/playerctl": {
-        "format": "  {}",
-        "max-length": 50,
-        "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"{{playerName}} : {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
-        "return-type": "json",
-        "on-click": "playerctl play-pause",
-        "on-click-right": "playerctl next",
-        "on-scroll-up": "playerctl previous",
-        "on-scroll-down": "playerctl next",
-        "format-icons": {
-            "Playing": "",
-            "Paused": "",
-            "Stopped": ""
-        }
     },
 
     "custom/player": {

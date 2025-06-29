@@ -28,10 +28,12 @@ title_name=$(playerctl metadata --format '{{markup_escape(title)}}' 2>/dev/null)
 
 if [ -z "$player_name" ] || [ -z "$artist_name" ] || [ -z "$title_name" ]; then
     tooltip="No media playing\\n"
+    class="none"
 else
-    tooltip="State : $state\\nPlayer : $player_name\\n"
+    tooltip="State  : $state\\nPlayer : $player_name\\n"
     tooltip+="Artist : $artist_name\\n"
     tooltip+="Title : $title_name\\n"
+    class="$state"
 fi
 
 tooltip+="*******************************\\n"
@@ -46,4 +48,4 @@ tooltip+="on-click-middle : open pavucontrol\\n"
 tooltip+="on-double-click: play next\\n"
 tooltip+="on-double-click-right: play previous"
 
-echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$state\"}"
+echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$class\"}"

@@ -75,7 +75,7 @@ button:hover {
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #idle_inhibitor, #tray, #custom-dunst, #custom-hijri,
-#custom-prayer, #custom-power{
+#custom-prayer, #custom-power, #custom-player.none{
     padding: 0 10px;
     margin: 6px 3px;
     color: #333333;
@@ -83,6 +83,7 @@ button:hover {
 
 #custom-hijri,
 #custom-prayer,
+#custom-player.none,
 #custom-power,
 #custom-dunst {
     background-color: #bbccdd;
@@ -117,6 +118,16 @@ button:hover {
     100% {
         opacity: 1;
     }
+}
+
+#custom-player.Playing {
+    color: #7dcfff;
+    border-bottom-color: #7dcfff;
+}
+
+#custom-player.Paused {
+    color: #f0932b;
+    border-bottom-color: #f0932b;
 }
 
 #window,
@@ -177,21 +188,6 @@ label:focus {
 #custom-weather {
     color: #b16286;
     border-bottom-color: #b16286;
-}
-
-#custom-playerctl {
-    color: #b16286;
-    border-bottom-color: #b16286;
-}
-
-#custom-playerctl.Playing {
-    color: #7dcfff;
-    border-bottom-color: #7dcfff;
-}
-
-#custom-playerctl.Paused {
-    color: #f0932b;
-    border-bottom-color: #f0932b;
 }
 
 #cpu {

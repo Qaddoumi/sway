@@ -130,8 +130,8 @@
         "exec": "~/.config/waybar/scripts/hijri_clock.sh",
         "return-type": "json",
         "interval": 3600,
-        "tooltip": "{tooltip}",
-        "tooltip-format": "{}"
+        "tooltip": true,
+        "on-click": "notify-send \"****************\" \"$(~/.config/waybar/scripts/hijri_clock.sh | jq -r '.tooltip')\""
     },
 
     "custom/prayer": {

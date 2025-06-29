@@ -15,10 +15,17 @@ fi
 volume=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '[0-9]+%' | head -1)
 if pactl get-sink-mute @DEFAULT_SINK@ | grep -q "yes"; then
     mute=true
-    text=" muted"
+    text="󰖁 muted"
 else
     mute=false
-    text=" $volume"
+    # Extract numeric volume value (remove %)
+    vol_num=$(echo "$volume" | tr -d '%')
+    if [ "$vol_num" -le 50 ]; then
+        icon=""
+    else
+        icon=""
+    fi
+    text="$icon $volume"
 fi
 
 state=$(playerctl status 2>/dev/null) # Paused, Playing, Stopped
@@ -30,7 +37,8 @@ if [ -z "$player_name" ] || [ -z "$artist_name" ] || [ -z "$title_name" ]; then
     tooltip="No media playing\\n"
     class="none"
 else
-    tooltip="State  : $state\\nPlayer : $player_name\\n"
+    tooltip="State : $state\\n"
+    tooltip+="Player : $player_name\\n"
     tooltip+="Artist : $artist_name\\n"
     tooltip+="Title : $title_name\\n"
     class="$state"
@@ -40,12 +48,12 @@ tooltip+="*******************************\\n"
 tooltip+="Volume : $volume\\n"
 tooltip+="Mute : $mute\\n"
 tooltip+="*******************************\\n"
-tooltip+="on-click : play-pause\\n"
+tooltip+="on-click : 󰐎 play-pause\\n"
 tooltip+="on-click-right : toggle mute/unmute\\n"
-tooltip+="on-scroll-up : increase volume\\n"
-tooltip+="on-scroll-down : decrease volume\\n"
+tooltip+="on-scroll-up : 󰝝 increase volume\\n"
+tooltip+="on-scroll-down : 󰝞 decrease volume\\n"
 tooltip+="on-click-middle : open pavucontrol\\n"
-tooltip+="on-double-click: play next\\n"
-tooltip+="on-double-click-right: play previous"
+tooltip+="on-double-click: 󰒭 play next\\n"
+tooltip+="on-double-click-right: 󰒮 play previous"
 
 echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$class\"}"

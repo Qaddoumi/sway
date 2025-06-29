@@ -34,6 +34,7 @@ sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
 sudo pacman -S --needed --noconfirm swaylock # Screen locker for sway
 sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # Portal for Wayland
 sudo pacman -S --needed --noconfirm playerctl # Media player control
+sudo pacman -S --needed --noconfirm pavucontrol # PulseAudio volume control
 #sudo pacman -S --needed --noconfirm autotiling # Auto-tiling for sway
 sudo pacman -S --needed --noconfirm nemo # File manager
 sudo pacman -S --needed --noconfirm kanshi # Automatic Display manager for Wayland

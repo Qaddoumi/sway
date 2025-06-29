@@ -128,8 +128,8 @@ for i in "${!prayer_array[@]}"; do
     prayer_name="${PRAYER_NAMES[$i]}"
     diff=$(time_diff "$prayer_time")
     
-    # Check if this is the current prayer (within 5 minutes after start)
-    if [[ $diff -lt 0 && $diff -gt -300 ]]; then
+    # Check if this is the current prayer (within 30 minutes after start)
+    if [[ $diff -lt 0 && $diff -gt -1800 ]]; then
         current_prayer="$prayer_name"
     fi
     

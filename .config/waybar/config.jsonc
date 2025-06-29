@@ -116,11 +116,11 @@
             }
         }
         //"actions": {
-          //  "on-click-right": "mode",
-          //  "on-click-forward": "tz_up",
-         //   "on-click-backward": "tz_down",
-         //   "on-scroll-up": "shift_up",
-         //   "on-scroll-down": "shift_down"
+          //  "on-click-right": "mode", // Switches the calendar mode (e.g., from month to week view) when you right-click.
+          //  "on-click-forward": "tz_up", // Switches to the next time zone (if you have multiple time zones configured)
+         //   "on-click-backward": "tz_down", // Switches to the previous time zone
+         //   "on-scroll-up": "shift_up", // Moves the calendar forward (e.g., to the next month) when you scroll up.
+         //   "on-scroll-down": "shift_down" // Moves the calendar backward (e.g., to the previous month)
         //}
     },
 

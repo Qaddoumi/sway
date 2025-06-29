@@ -4,8 +4,8 @@
     "height": 34, // Waybar height (to be removed for auto height)
     "spacing": 1, // Gaps between modules (6px)
 
-    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
-    "modules-center": ["sway/window", "custom/playerctl"],
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window", "custom/playerctl"],
+    "modules-center": [],
     "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "pulseaudio", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather"],
 

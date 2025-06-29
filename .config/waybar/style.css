@@ -121,15 +121,28 @@ button:hover {
 }
 
 #custom-player.Playing {
-    color: #7dcfff;
     border-bottom-color: #7dcfff;
-    background-color :#10520d;
+    background-color: #38a832;
+    animation: pulse-playing 2s ease-in-out infinite alternate;
 }
 
 #custom-player.Paused {
-    color: #f0932b;
-    border-bottom-color: #f0932b;
-    background-color: #f0eeed;
+    background-color: #f0932b;
+}
+
+#custom-player:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+@keyframes pulse-playing {
+    0% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1.0;
+    }
 }
 
 #window,

@@ -189,13 +189,14 @@
     "battery": {
         "bat": "BAT1", // or BAT2, check "ls /sys/class/power_supply/"
         "adapter": "ACAD", // or AC, ADP0, check "ls /sys/class/power_supply/"
-        "full-at": 98,
+        "full-at": 97,
         "states": {
             "good": 95,
             "warning": 30,
             "critical": 15
         },
         "format": "{icon} {capacity}%",
+        "format-full": "💯 {capacity}%",
         "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-alt": "{icon} {time}",

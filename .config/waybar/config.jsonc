@@ -188,7 +188,7 @@
     // "cat /sys/class/power_supply/A*/online"
     "battery": {
         "bat": "BAT1", // or BAT2, check "ls /sys/class/power_supply/"
-        //"adapter": "ACAD", // or AC, ADP0, check "ls /sys/class/power_supply/"
+        "adapter": "ACAD", // or AC, ADP0, check "ls /sys/class/power_supply/"
         "full-at": 97,
         "states": {
             "good": 95,
@@ -200,8 +200,8 @@
         "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-alt": "{icon} {time}",
-        "format-icons": ["", "", "", "", ""],
-        "tooltip-format": "State: {state}\\nTime to charge: {timeTo}\\nPower: {power}W\\nCharge cycle: {cycle}\\nHealth: {health}"
+        "format-icons": ["", "", "", "", ""]
+        //"tooltip-format": "State: {state}\\nTime to charge: {timeTo}\\nPower: {power}W\\nCharge cycle: {cycle}\\nHealth: {health}"
     },
 
     // TODO: add how much has been downloaded 

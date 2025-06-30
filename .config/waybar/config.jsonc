@@ -196,12 +196,12 @@
             "critical": 15
         },
         "format": "{icon} {capacity}%",
-        "format-full": "💯 {capacity}%",
+        "format-full": " {capacity}%",
         "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-alt": "{icon} {time}",
         "format-icons": ["", "", "", "", ""],
-        "tooltip-format": "Time to charge: {timeTo}\\nPower: {power}W\\nCharge cycle: {cycles}\\nHealth: {health}"
+        "tooltip-format": "Time to charge: {timeTo}\nPower: {power}W\nCharge cycle: {cycles}\nHealth: {health}"
     },
 
     // TODO: add how much has been downloaded 

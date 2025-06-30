@@ -14,37 +14,46 @@ fi
 
 # Function to get volume from any active sink
 get_active_volume() {
-    # Get all sinks and their volumes
+    # Get the actual default sink name
+    local default_sink_name=$(pactl get-default-sink 2>/dev/null)
     local max_volume=0
     local active_sink=""
     local is_muted=false
     
     # Check default sink first
-    local default_volume=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
-    local default_mute=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | grep -q "yes" && echo "true" || echo "false")
-    
-    if [ -n "$default_volume" ] && [ "$default_volume" -gt 0 ]; then
-        max_volume=$default_volume
-        active_sink="@DEFAULT_SINK@"
-        is_muted=$default_mute
+    if [ -n "$default_sink_name" ]; then
+        local default_volume=$(pactl get-sink-volume "$default_sink_name" 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
+        local default_mute=$(pactl get-sink-mute "$default_sink_name" 2>/dev/null | grep -q "yes" && echo "true" || echo "false")
+        
+        if [ -n "$default_volume" ]; then
+            max_volume=$default_volume
+            active_sink=$default_sink_name
+            is_muted=$default_mute
+        fi
     fi
     
-    # Check all other sinks for active audio
-    while IFS= read -r sink; do
-        if [ -n "$sink" ] && [ "$sink" != "@DEFAULT_SINK@" ]; then
-            local sink_volume=$(pactl get-sink-volume "$sink" 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
-            local sink_mute=$(pactl get-sink-mute "$sink" 2>/dev/null | grep -q "yes" && echo "true" || echo "false")
+    # Check all sinks for the one with highest volume or active streams
+    while IFS= read -r sink_line; do
+        local sink_id=$(echo "$sink_line" | awk '{print $1}')
+        local sink_name=$(echo "$sink_line" | awk '{print $2}')
+        
+        if [ -n "$sink_name" ]; then
+            local sink_volume=$(pactl get-sink-volume "$sink_name" 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
+            local sink_mute=$(pactl get-sink-mute "$sink_name" 2>/dev/null | grep -q "yes" && echo "true" || echo "false")
             
-            # Check if this sink is currently playing audio
-            local sink_inputs=$(pactl list sink-inputs 2>/dev/null | grep -A 10 "Sink Input" | grep -B 10 "Sink: $sink" | grep -c "State: RUNNING")
+            # Check if this sink has active inputs
+            local has_inputs=$(pactl list sink-inputs 2>/dev/null | grep -c "Sink: $sink_id")
             
-            if [ -n "$sink_volume" ] && [ "$sink_volume" -gt "$max_volume" ] && [ "$sink_inputs" -gt 0 ]; then
-                max_volume=$sink_volume
-                active_sink=$sink
-                is_muted=$sink_mute
+            # Prefer sinks with active inputs, or higher volume
+            if [ -n "$sink_volume" ] && ([ "$has_inputs" -gt 0 ] || [ "$sink_volume" -gt "$max_volume" ]); then
+                if [ "$has_inputs" -gt 0 ] || [ "$sink_name" = "$default_sink_name" ]; then
+                    max_volume=$sink_volume
+                    active_sink=$sink_name
+                    is_muted=$sink_mute
+                fi
             fi
         fi
-    done < <(pactl list short sinks 2>/dev/null | awk '{print $2}')
+    done < <(pactl list short sinks 2>/dev/null)
     
     echo "$max_volume|$active_sink|$is_muted"
 }
@@ -155,18 +164,18 @@ title_name=$(playerctl metadata --format '{{markup_escape(title)}}' 2>/dev/null)
 
 if [ -z "$player_name" ] || [ -z "$artist_name" ] || [ -z "$title_name" ]; then
     tooltip="No media playing\\n"
-    class="none"
+    class="Stopped"
 else
-    tooltip="State : $state\\n"
+    tooltip="State  : $state\\n"
     tooltip+="Player : $player_name\\n"
     tooltip+="Artist : $artist_name\\n"
-    tooltip+="Title : $title_name\\n"
+    tooltip+="Title  : $title_name\\n"
     class="$state"
 fi
 
 
 
-tooltip+="**************************************\\n"
+tooltip+="*******************************************\\n"
 tooltip+="Volume : ${volume_percent}%\\n"
 tooltip+="Mute : $mute\\n"
 tooltip+="Active Sink : $active_sink\\n"
@@ -174,13 +183,13 @@ if [ "$stream_count" -gt 0 ]; then
     tooltip+="**** Active Audio Streams ($stream_count) ****\\n"
     tooltip+="$active_streams"
 fi
-tooltip+="**************************************\\n"
-tooltip+="on-click :                󰐎 play-pause\\n"
-tooltip+="on-click-right :    toggle mute/unmute\\n"
-tooltip+="on-scroll-up :       󰝝 increase volume\\n"
-tooltip+="on-scroll-down :     󰝞 decrease volume\\n"
-tooltip+="on-click-middle :     open pavucontrol\\n"
-tooltip+="on-double-click:           󰒭 play next\\n"
-tooltip+="on-double-click-right: 󰒮 play previous"
+tooltip+="*******************************************\\n"
+tooltip+="on-click :                  play-pause 󰐎 \\n"
+tooltip+="on-click-right :  toggle mute/unmute  /  \\n"
+tooltip+="on-scroll-up :         increase volume 󰝝 \\n"
+tooltip+="on-scroll-down :       decrease volume 󰝞 \\n"
+tooltip+="on-click-middle :     open pavucontrol  \\n"
+tooltip+="on-double-click:             play next 󰒭 \\n"
+tooltip+="on-double-click-right:   play previous 󰒮 "
 
 echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$class\"}"

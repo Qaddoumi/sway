@@ -183,13 +183,7 @@
         "on-click-alt": "brightnessctl set 10%-"
     },
 
-    // checks 
-    // "cat /sys/class/power_supply/BAT*/status"
-    // "cat /sys/class/power_supply/A*/online"
     "battery": {
-        "bat": "BAT0", // or BAT2, check "ls /sys/class/power_supply/"
-        "adapter": "ACAD", // or AC, ADP0, check "ls /sys/class/power_supply/"
-        "full-at": 98,
         "states": {
             "good": 95,
             "warning": 30,
@@ -199,8 +193,7 @@
         "format-charging": " {capacity}%",
         "format-plugged": " {capacity}%",
         "format-alt": "{icon} {time}",
-        "format-icons": ["", "", "", "", ""],
-        "tooltip-format": "State: {state}\nTime to charge: {time}\nPower: {power}W\nCharge cycle: {cycle}"
+        "format-icons": ["", "", "", "", ""]
     },
 
     // TODO: add how much has been downloaded 

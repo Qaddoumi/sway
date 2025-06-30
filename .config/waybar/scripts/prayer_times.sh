@@ -26,7 +26,7 @@ time_to_seconds() {
     local time_str="$1"
     local hour=$(echo "$time_str" | cut -d: -f1)
     local minute=$(echo "$time_str" | cut -d: -f2)
-    echo $(( hour * 3600 + minute * 60 ))
+    echo $(( 10#$hour * 3600 + 10#$minute * 60 ))
 }
 
 # Function to format seconds to HH:MM

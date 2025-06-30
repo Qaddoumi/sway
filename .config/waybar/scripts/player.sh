@@ -142,7 +142,7 @@ else
     class="$state"
 fi
 
-tooltip+="*******************************\\n"
+tooltip+="**************************************\\n"
 tooltip+="Volume : ${volume_percent}%\\n"
 tooltip+="Mute : $mute\\n"
 tooltip+="Active Sink : $active_sink\\n"
@@ -150,13 +150,13 @@ if [ "$stream_count" -gt 0 ]; then
     tooltip+="**** Active Audio Streams ($stream_count) ****\\n"
     tooltip+="$active_streams"
 fi
-tooltip+="*******************************\\n"
-tooltip+="on-click : 󰐎 play-pause\\n"
-tooltip+="on-click-right : toggle mute/unmute\\n"
-tooltip+="on-scroll-up : 󰝝 increase volume\\n"
-tooltip+="on-scroll-down : 󰝞 decrease volume\\n"
-tooltip+="on-click-middle : open pavucontrol\\n"
-tooltip+="on-double-click: 󰒭 play next\\n"
+tooltip+="**************************************\\n"
+tooltip+="on-click :                󰐎 play-pause\\n"
+tooltip+="on-click-right :    toggle mute/unmute\\n"
+tooltip+="on-scroll-up :       󰝝 increase volume\\n"
+tooltip+="on-scroll-down :     󰝞 decrease volume\\n"
+tooltip+="on-click-middle :     open pavucontrol\\n"
+tooltip+="on-double-click:           󰒭 play next\\n"
 tooltip+="on-double-click-right: 󰒮 play previous"
 
 echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$class\"}"

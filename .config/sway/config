@@ -43,7 +43,7 @@ set $lock 'swaylock \
     --text-wrong-color d3c6aa \
     --indicator-radius 100 \
     --indicator-thickness 10 \
-    --font "CaskaydiaMono Nerd Font"'
+    --font "JetBrainsMono Nerd Font Propo"'
 
 
 ### General configuration
@@ -140,7 +140,7 @@ exec swayidle -w \
         --text-wrong-color d3c6aa \
         --indicator-radius 100 \
         --indicator-thickness 10 \
-        --font "CaskaydiaMono Nerd Font"' \
+        --font "JetBrainsMono Nerd Font Propo"' \
     timeout 1800 'swaymsg output "*" power off' \
     resume 'swaymsg output "*" power on' \
     before-sleep 'swaylock -f -c 000000'
@@ -149,7 +149,7 @@ exec swayidle -w \
 # resumed. It will also lock your screen before your computer goes to sleep.
 
 ### Font Configuration
-font pango:CaskaydiaMono Nerd Font 12
+font pango:JetBrainsMono Nerd Font Propo 12
 
 ## Sway Automatic Tiling
 # Automatically chooses split direction based on the current container's aspect ratio

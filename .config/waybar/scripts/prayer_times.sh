@@ -160,6 +160,7 @@ fi
 
 # Create tooltip with all prayer times
 tooltip="Prayer Times $offline_mode\\n"
+tooltip+="\\n"
 tooltip+="Fajr:    $fajr\\n"
 tooltip+="Dhuhr:   $dhuhr\\n"
 tooltip+="Asr:     $asr\\n"

@@ -36,5 +36,5 @@ case $selected in
         --text-wrong-color d3c6aa \
         --indicator-radius 100 \
         --indicator-thickness 10 \
-        --font "JetBrainsMono Nerd Font Mono";;
+        --font "CaskaydiaMono Nerd Font";;
 esac

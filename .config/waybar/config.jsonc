@@ -187,7 +187,7 @@
     // "cat /sys/class/power_supply/BAT*/status"
     // "cat /sys/class/power_supply/A*/online"
     "battery": {
-        "bat": "BAT0", // or BAT2, check "ls /sys/class/power_supply/"
+        "bat": "BAT1", // or BAT2, check "ls /sys/class/power_supply/"
         "adapter": "ACAD", // or AC, ADP0, check "ls /sys/class/power_supply/"
         "full-at": 98,
         "states": {

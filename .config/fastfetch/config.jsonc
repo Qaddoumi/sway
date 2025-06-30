@@ -9,7 +9,7 @@
     "logo": {
         "source": "~/.config/fastfetch/images/archlinux.png",
         "type": "kitty-direct",
-        "height": 20,
+        "height": 23,
         "padding": {
             "top": 1
         }

@@ -54,36 +54,58 @@ get_active_audio_streams() {
     local streams=""
     local vm_audio_detected=false
     local stream_count=0
+    local current_app=""
+    local current_volume=""
+    local current_corked=""
     
-    # Parse pactl list sink-inputs output
+    # Parse pactl list sink-inputs output line by line
     while IFS= read -r line; do
-        if [[ $line =~ ^Sink\ Input\ #([0-9]+) ]]; then
-            current_input="${BASH_REMATCH[1]}"
-            app_name=""
-            volume=""
-            corked=""
-        elif [[ $line =~ application\.name\ =\ \"(.*)\" ]]; then
-            app_name="${BASH_REMATCH[1]}"
-        elif [[ $line =~ Volume:.*([0-9]+)%.*([0-9]+)% ]]; then
-            # Extract first volume percentage
-            volume=$(echo "$line" | grep -oP '[0-9]+%' | head -1)
-        elif [[ $line =~ Corked:\ (yes|no) ]]; then
-            corked="${BASH_REMATCH[1]}"
-            
-            # When we reach Corked line, we have all info for this stream
-            if [ -n "$app_name" ] && [ "$corked" = "no" ]; then
+        # Clean up the line
+        line=$(echo "$line" | sed 's/^[[:space:]]*//')
+        
+        if [[ $line =~ ^Sink\ Input ]]; then
+            # Process previous entry if we have one
+            if [ -n "$current_app" ] && [ "$current_corked" = "no" ]; then
                 stream_count=$((stream_count + 1))
                 
                 # Check if this is VM audio
-                if [[ $app_name =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
+                if [[ $current_app =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
                     vm_audio_detected=true
-                    streams="$streams$app_name ($volume) 󰍹\\n"
+                    streams="$streams$current_app ($current_volume) 󰍹\\n"
                 else
-                    streams="$streams$app_name ($volume)\\n"
+                    streams="$streams$current_app ($current_volume)\\n"
                 fi
             fi
+            
+            # Reset for new entry
+            current_app=""
+            current_volume=""
+            current_corked=""
+            
+        elif [[ $line =~ application\.name\ =\ \"(.+)\" ]]; then
+            current_app="${BASH_REMATCH[1]}"
+            
+        elif [[ $line =~ ^Volume: ]]; then
+            # Extract first volume percentage from Volume line
+            current_volume=$(echo "$line" | grep -oP '[0-9]+%' | head -1)
+            
+        elif [[ $line =~ ^Corked:\ (.+) ]]; then
+            current_corked="${BASH_REMATCH[1]}"
         fi
     done < <(pactl list sink-inputs 2>/dev/null)
+    
+    # Process the last entry
+    if [ -n "$current_app" ] && [ "$current_corked" = "no" ]; then
+        stream_count=$((stream_count + 1))
+        
+        # Check if this is VM audio
+        if [[ $current_app =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
+            vm_audio_detected=true
+            streams="$streams$current_app ($current_volume) 󰍹\\n"
+        else
+            streams="$streams$current_app ($current_volume)\\n"
+        fi
+    fi
     
     echo "$streams|$vm_audio_detected|$stream_count"
 }
@@ -141,6 +163,8 @@ else
     tooltip+="Title : $title_name\\n"
     class="$state"
 fi
+
+
 
 tooltip+="**************************************\\n"
 tooltip+="Volume : ${volume_percent}%\\n"

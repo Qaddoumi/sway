@@ -196,7 +196,7 @@
         "format-icons": ["", "", "", "", ""]
     },
 
-    // TODO: add network speed , and on tooltip how much has been downloaded 
+    // TODO: add how much has been downloaded 
     //       with the app that currently uses the internet , and the app that
     //       downloaded the most.
     "network": {

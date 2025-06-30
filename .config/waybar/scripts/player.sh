@@ -49,24 +49,43 @@ get_active_volume() {
     echo "$max_volume|$active_sink|$is_muted"
 }
 
-# Function to detect if VM audio is playing
-detect_vm_audio() {
-    # Look for VM-related processes that might be playing audio
-    local vm_processes=("qemu" "VirtualBox" "vmware" "kvm" "libvirt" "virt-manager")
+# Function to get all active audio streams
+get_active_audio_streams() {
+    local streams=""
     local vm_audio_detected=false
+    local stream_count=0
     
-    for process in "${vm_processes[@]}"; do
-        if pgrep -f "$process" > /dev/null 2>&1; then
-            # Check if this process has audio streams
-            local audio_streams=$(pactl list sink-inputs 2>/dev/null | grep -i "$process" | wc -l)
-            if [ "$audio_streams" -gt 0 ]; then
-                vm_audio_detected=true
-                break
+    # Parse pactl list sink-inputs output
+    while IFS= read -r line; do
+        if [[ $line =~ ^Sink\ Input\ #([0-9]+) ]]; then
+            current_input="${BASH_REMATCH[1]}"
+            app_name=""
+            volume=""
+            corked=""
+        elif [[ $line =~ application\.name\ =\ \"(.*)\" ]]; then
+            app_name="${BASH_REMATCH[1]}"
+        elif [[ $line =~ Volume:.*([0-9]+)%.*([0-9]+)% ]]; then
+            # Extract first volume percentage
+            volume=$(echo "$line" | grep -oP '[0-9]+%' | head -1)
+        elif [[ $line =~ Corked:\ (yes|no) ]]; then
+            corked="${BASH_REMATCH[1]}"
+            
+            # When we reach Corked line, we have all info for this stream
+            if [ -n "$app_name" ] && [ "$corked" = "no" ]; then
+                stream_count=$((stream_count + 1))
+                
+                # Check if this is VM audio
+                if [[ $app_name =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
+                    vm_audio_detected=true
+                    streams="$streams$app_name ($volume) 󰍹\\n"
+                else
+                    streams="$streams$app_name ($volume)\\n"
+                fi
             fi
         fi
-    done
+    done < <(pactl list sink-inputs 2>/dev/null)
     
-    echo $vm_audio_detected
+    echo "$streams|$vm_audio_detected|$stream_count"
 }
 
 # Get volume information from active sinks
@@ -75,7 +94,11 @@ volume_percent=$(echo "$volume_info" | cut -d'|' -f1)
 active_sink=$(echo "$volume_info" | cut -d'|' -f2)
 is_muted=$(echo "$volume_info" | cut -d'|' -f3)
 
-vm_audio=$(detect_vm_audio)
+# Get active audio streams information
+audio_streams_info=$(get_active_audio_streams)
+active_streams=$(echo "$audio_streams_info" | cut -d'|' -f1)
+vm_audio=$(echo "$audio_streams_info" | cut -d'|' -f2)
+stream_count=$(echo "$audio_streams_info" | cut -d'|' -f3)
 
 # Set volume display
 if [ "$is_muted" = "true" ]; then
@@ -87,18 +110,20 @@ else
     mute=false
     # Choose icon based on volume level
     if [ "$volume_percent" -le 30 ]; then
-        icon=""
+        icon="󰕿"
     elif [ "$volume_percent" -le 70 ]; then
-        icon=""
+        icon="󰖀"
     else
-        icon=" "
+        icon="󰕾"
     fi
     text="$icon ${volume_percent}%"
 fi
 
-# Add VM indicator if VM audio detected
+# Add VM indicator if VM audio detected, or stream count if multiple streams
 if [ "$vm_audio" = "true" ]; then
     text="$text 󰍹"
+elif [ "$stream_count" -gt 1 ]; then
+    text="$text [$stream_count]"
 fi
 
 state=$(playerctl status 2>/dev/null) # Paused, Playing, Stopped
@@ -121,8 +146,9 @@ tooltip+="*******************************\\n"
 tooltip+="Volume : ${volume_percent}%\\n"
 tooltip+="Mute : $mute\\n"
 tooltip+="Active Sink : $active_sink\\n"
-if [ "$vm_audio" = "true" ]; then
-    tooltip+="VM Audio : Detected 󰍹\\n"
+if [ "$stream_count" -gt 0 ]; then
+    tooltip+="**** Active Audio Streams ($stream_count) ****\\n"
+    tooltip+="$active_streams"
 fi
 tooltip+="*******************************\\n"
 tooltip+="on-click : 󰐎 play-pause\\n"

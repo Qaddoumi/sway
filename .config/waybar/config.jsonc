@@ -76,7 +76,9 @@
             "activated": "",
             "deactivated": ""
         },
-        "tooltip": true
+        "tooltip": true,
+        "tooltip-format-activated": "Idle inhibitor is active",
+        "tooltip-format-deactivated": "Idle inhibitor is inactive"
     },
 
     "tray": {

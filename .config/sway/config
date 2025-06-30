@@ -176,7 +176,7 @@ exec_always pkill kanshi; kanshi
 #exec waybar
 
 ## dunst Notification
-exec dunst
+exec_always killall dunst && dunst &
 
 ## Autostart Applications
 

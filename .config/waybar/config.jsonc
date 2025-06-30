@@ -169,6 +169,11 @@
         // "format-critical": "{temperatureC}°C {icon}",
         "format": " {temperatureC}°C",
         "format-icons": ["", "", ""],
+        "interval": 5,
+        "states": {
+            "warning": 70,
+            "critical": 80
+        },
         "on-click": "kitty -e s-tui"
     },
 

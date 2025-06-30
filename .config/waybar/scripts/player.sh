@@ -19,7 +19,7 @@ get_active_volume() {
     local max_volume=0
     local active_sink=""
     local is_muted=false
-    
+
     # Check default sink first
     if [ -n "$default_sink_name" ]; then
         local default_volume=$(pactl get-sink-volume "$default_sink_name" 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
@@ -31,19 +31,19 @@ get_active_volume() {
             is_muted=$default_mute
         fi
     fi
-    
+
     # Check all sinks for the one with highest volume or active streams
     while IFS= read -r sink_line; do
         local sink_id=$(echo "$sink_line" | awk '{print $1}')
         local sink_name=$(echo "$sink_line" | awk '{print $2}')
-        
+
         if [ -n "$sink_name" ]; then
             local sink_volume=$(pactl get-sink-volume "$sink_name" 2>/dev/null | grep -oP '[0-9]+%' | head -1 | tr -d '%')
             local sink_mute=$(pactl get-sink-mute "$sink_name" 2>/dev/null | grep -q "yes" && echo "true" || echo "false")
-            
+
             # Check if this sink has active inputs
             local has_inputs=$(pactl list sink-inputs 2>/dev/null | grep -c "Sink: $sink_id")
-            
+
             # Prefer sinks with active inputs, or higher volume
             if [ -n "$sink_volume" ] && ([ "$has_inputs" -gt 0 ] || [ "$sink_volume" -gt "$max_volume" ]); then
                 if [ "$has_inputs" -gt 0 ] || [ "$sink_name" = "$default_sink_name" ]; then
@@ -54,7 +54,7 @@ get_active_volume() {
             fi
         fi
     done < <(pactl list short sinks 2>/dev/null)
-    
+
     echo "$max_volume|$active_sink|$is_muted"
 }
 
@@ -66,17 +66,17 @@ get_active_audio_streams() {
     local current_app=""
     local current_volume=""
     local current_corked=""
-    
+
     # Parse pactl list sink-inputs output line by line
     while IFS= read -r line; do
         # Clean up the line
         line=$(echo "$line" | sed 's/^[[:space:]]*//')
-        
+
         if [[ $line =~ ^Sink\ Input ]]; then
             # Process previous entry if we have one
             if [ -n "$current_app" ] && [ "$current_corked" = "no" ]; then
                 stream_count=$((stream_count + 1))
-                
+
                 # Check if this is VM audio
                 if [[ $current_app =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
                     vm_audio_detected=true
@@ -85,28 +85,28 @@ get_active_audio_streams() {
                     streams="$streams$current_app ($current_volume)\\n"
                 fi
             fi
-            
+
             # Reset for new entry
             current_app=""
             current_volume=""
             current_corked=""
-            
+
         elif [[ $line =~ application\.name\ =\ \"(.+)\" ]]; then
             current_app="${BASH_REMATCH[1]}"
-            
+
         elif [[ $line =~ ^Volume: ]]; then
             # Extract first volume percentage from Volume line
             current_volume=$(echo "$line" | grep -oP '[0-9]+%' | head -1)
-            
+
         elif [[ $line =~ ^Corked:\ (.+) ]]; then
             current_corked="${BASH_REMATCH[1]}"
         fi
     done < <(pactl list sink-inputs 2>/dev/null)
-    
+
     # Process the last entry
     if [ -n "$current_app" ] && [ "$current_corked" = "no" ]; then
         stream_count=$((stream_count + 1))
-        
+
         # Check if this is VM audio
         if [[ $current_app =~ (virt-manager|qemu|VirtualBox|vmware|kvm) ]]; then
             vm_audio_detected=true
@@ -115,7 +115,7 @@ get_active_audio_streams() {
             streams="$streams$current_app ($current_volume)\\n"
         fi
     fi
-    
+
     echo "$streams|$vm_audio_detected|$stream_count"
 }
 

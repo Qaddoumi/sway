@@ -9,15 +9,11 @@
     "logo": {
         "source": "~/.config/fastfetch/images/archlinux.png",
         "type": "kitty-direct",
-        "padding": {
-            "top": 3
-        }
     },
     "display": {
         "separator": " ➜  "
     },
     "modules": [
-        "break",
         {
             "type": "os",
             "key": "OS   ",

@@ -64,7 +64,7 @@ fc-cache -fv
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
 echo -e "${green}Installing and configuring Qemu/Libvirt for virtualization${no_color}"
-sudo pacman -S virt-manager qemu-desktop libvirt ebtables dnsmasq bridge-utils spice-vdagent
+sudo pacman -S --needed --noconfirm virt-manager qemu-desktop libvirt ebtables dnsmasq bridge-utils spice-vdagent
 
 echo -e "${green}Enabling and starting libvirtd service${no_color}"
 sudo systemctl enable --now libvirtd

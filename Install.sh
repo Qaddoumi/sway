@@ -63,20 +63,20 @@ fc-cache -fv
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Installing and configuring Qemu/Libvirt for virtualization${no_color}"
-sudo pacman -S --needed --noconfirm virt-manager qemu-desktop libvirt ebtables dnsmasq bridge-utils spice-vdagent
+#echo -e "${green}Installing and configuring Qemu/Libvirt for virtualization${no_color}"
+#sudo pacman -S --needed --noconfirm virt-manager qemu-desktop libvirt ebtables dnsmasq bridge-utils spice-vdagent
 
-echo -e "${green}Enabling and starting libvirtd service${no_color}"
-sudo systemctl enable --now libvirtd
+#echo -e "${green}Enabling and starting libvirtd service${no_color}"
+#sudo systemctl enable --now libvirtd
 
-echo -e "${green}Adding current user to libvirt group${no_color}"
-sudo usermod -aG libvirt $(whoami)
-echo -e "${green}Adding libvirt-qemu user to input group${no_color}"
+#echo -e "${green}Adding current user to libvirt group${no_color}"
+#sudo usermod -aG libvirt $(whoami)
+#echo -e "${green}Adding libvirt-qemu user to input group${no_color}"
 sudo usermod -aG input libvirt-qemu
 
-echo -e "${green}Starting and autostarting the default network for libvirt${no_color}"
-sudo virsh net-start default
-sudo virsh net-autostart default
+#echo -e "${green}Starting and autostarting the default network for libvirt${no_color}"
+#sudo virsh net-start default
+#sudo virsh net-autostart default
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

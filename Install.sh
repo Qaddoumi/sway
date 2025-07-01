@@ -133,7 +133,7 @@ echo -e "${blue}==================================================\n============
 echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
 
 # ly
-yay -S --needed --noconfirm ly
+sudo pacman -S --needed --noconfirm ly
 sudo pacman -S --needed --noconfirm cmatrix
 sudo systemctl disable display-manager.service  2>/dev/null
 sudo systemctl enable ly.service

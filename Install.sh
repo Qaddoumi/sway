@@ -135,7 +135,7 @@ echo -e "${green}Installing and configuring ly (a lightweight display manager)${
 # ly
 yay -S --needed --noconfirm ly
 sudo pacman -S --needed --noconfirm cmatrix
-sudo systemctl disable display-manager.service
+sudo systemctl disable display-manager.service  2>/dev/null
 sudo systemctl enable ly.service
 # Edit the configuration file /etc/ly/config.ini
 sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini

@@ -72,7 +72,7 @@ echo -e "${blue}==================================================\n============
 #echo -e "${green}Adding current user to libvirt group${no_color}"
 #sudo usermod -aG libvirt $(whoami)
 #echo -e "${green}Adding libvirt-qemu user to input group${no_color}"
-sudo usermod -aG input libvirt-qemu
+#sudo usermod -aG input libvirt-qemu
 
 #echo -e "${green}Starting and autostarting the default network for libvirt${no_color}"
 #sudo virsh net-start default

@@ -1,0 +1,105 @@
+/* Wofi Style Configuration
+   Save this as ~/.config/wofi/style.css */
+
+/* Main window */
+window {
+    margin: 0px;
+    border: 2px solid #89b4fa;
+    background-color: #1e1e2e;
+    border-radius: 12px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* Input box */
+#input {
+    margin: 8px;
+    padding: 12px;
+    color: #cdd6f4;
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    outline: none;
+    font-size: 16px;
+}
+
+#input:focus {
+    border-color: #89b4fa;
+    box-shadow: 0 0 8px rgba(137, 180, 250, 0.3);
+}
+
+/* Scrolled area */
+#scroll {
+    margin: 0px 8px 8px 8px;
+    border-radius: 8px;
+    background-color: transparent;
+}
+
+/* Inner box containing entries */
+#inner-box {
+    margin: 4px;
+    border: none;
+    background-color: transparent;
+}
+
+/* Individual entries */
+#entry {
+    padding: 8px 12px;
+    margin: 2px;
+    border-radius: 6px;
+    background-color: transparent;
+    color: #cdd6f4;
+    transition: all 0.2s ease-in-out;
+}
+
+#entry:selected {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    font-weight: bold;
+}
+
+#entry:hover {
+    background-color: #45475a;
+}
+
+#entry:selected:hover {
+    background-color: #74c7ec;
+}
+
+/* Entry text */
+#text {
+    margin: 0px 8px;
+}
+
+/* Entry icons */
+#img {
+    margin-right: 8px;
+    border-radius: 4px;
+}
+
+/* No results text */
+#entry.activatable #text {
+    color: #f38ba8;
+}
+
+/* Scrollbar styling */
+scrollbar {
+    background: #313244;
+    border-radius: 4px;
+    width: 8px;
+}
+
+scrollbar slider {
+    background: #585b70;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+scrollbar slider:hover {
+    background: #6c7086;
+}
+
+scrollbar slider:active {
+    background: #89b4fa;
+}

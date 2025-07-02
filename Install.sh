@@ -53,6 +53,19 @@ yay -S --needed --noconfirm oh-my-posh # Theme engine for terminal
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+# To apply system-wide for all Electron apps
+ENV_FILE="/etc/environment"
+if grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$ENV_FILE"; then
+    echo "ELECTRON_OZONE_PLATFORM_HINT already exists in $ENV_FILE"
+else
+    sudo echo "Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE..."
+    sudo echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" >> "$ENV_FILE"
+    sudo echo "Successfully added to $ENV_FILE"
+fi
+echo "You'll need to restart your session for this to take effect system-wide"
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}Installing fonts${no_color}"
 
 sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono

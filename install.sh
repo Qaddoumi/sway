@@ -18,7 +18,7 @@ echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go
 git clone https://aur.archlinux.org/yay.git
 cd yay
-makepkg -si
+makepkg -si --noconfirm
 cd .. && rm -rf yay
 yay --version
 

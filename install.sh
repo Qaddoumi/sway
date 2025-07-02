@@ -55,7 +55,7 @@ if command -v yay &> /dev/null ; then
 
     if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
         echo "yay is already up to date (version $CURRENT_VERSION)"
-    elif printf '%s\n%s\n' "$LATEST_VERSION" "$CURRENT_VERSION" | sort -V | tail -n1 | grep -q "^$1$"; then
+    elif printf '%s\n%s\n' "$LATEST_VERSION" "$CURRENT_VERSION" | sort -V | tail -n1 | grep -q "^$LATEST_VERSION$"; then
         echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
         echo "Proceeding with update..."
         install_yay

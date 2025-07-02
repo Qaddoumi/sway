@@ -204,79 +204,172 @@ else
 fi
 
 echo -e "${green}Detecting bootloader...${no_color}"
-if [[ -f "/boot/grub/grub.cfg" ]] || [[ -d "/boot/grub" ]]; then
-    echo -e "${green}GRUB bootloader detected${no_color}"
-    echo -e "${green}Configuring GRUB bootloader...${no_color}"
-
-    GRUB_CONFIG="/etc/default/grub"
-    backup_file "$GRUB_CONFIG"
-
-    # Check if GRUB_CMDLINE_LINUX_DEFAULT exists
-    if ! grep -q "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG"; then
-        echo -e "${red}GRUB_CMDLINE_LINUX_DEFAULT not found in $GRUB_CONFIG${no_color}"
-        exit 1
+detect_bootloader() {
+    # Check for GRUB first
+    if [[ -f "/boot/grub/grub.cfg" ]] || [[ -d "/boot/grub" ]]; then
+        echo -e "${green}GRUB bootloader detected${no_color}"
+        return 1  # GRUB detected
     fi
-
-    # Check if IOMMU parameter already exists
-    if grep "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG" | grep -q "$IOMMU_PARAM"; then
-        echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
-        exit 0
-    fi
-
-    # Add IOMMU parameter to GRUB_CMDLINE_LINUX_DEFAULT
-    sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt\"/" "$GRUB_CONFIG"
-
-    echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt${no_color}"
-
-    # Regenerate GRUB configuration
-    echo -e "${green}Regenerating GRUB configuration...${no_color}"
-    sudo grub-mkconfig -o /boot/grub/grub.cfg
-
-    echo -e "${green}GRUB configuration updated successfully${no_color}"
-elif { [[ -d "/boot/loader" ]] && [[ -f "/boot/loader/loader.conf" ]]; } || \
-     { [[ -d "/boot/efi/loader" ]] && [[ -f "/boot/efi/loader/loader.conf" ]]; }; then
-    echo -e "${green}systemd-boot detected${no_color}"
-    echo -e "${green}Configuring systemd-boot...${no_color}"
-
-    # Determine correct loader path
-    if [[ -d "/boot/loader/entries" ]]; then
-        BOOT_ENTRIES_DIR="/boot/loader/entries"
-    elif [[ -d "/boot/efi/loader/entries" ]]; then
-        BOOT_ENTRIES_DIR="/boot/efi/loader/entries"
-    else
-        echo -e "${red}systemd-boot entries directory not found in /boot/loader/entries or /boot/efi/loader/entries${no_color}"
-    fi
-
-    # Find the current default entry or the most recent one
-    DEFAULT_ENTRY=$(find "$BOOT_ENTRIES_DIR" -name "*.conf" | head -1)
     
-    if [[ -z "$DEFAULT_ENTRY" ]]; then
-        echo -e "${red}No boot entries found in $BOOT_ENTRIES_DIR${no_color}"
-        exit 1
+    # Check for systemd-boot in multiple possible locations
+    local systemd_boot_detected=false
+    
+    # Check common systemd-boot paths
+    if [[ -f "/boot/loader/loader.conf" ]] || [[ -d "/boot/loader/entries" ]]; then
+        echo -e "${green}systemd-boot detected at /boot/loader/${no_color}"
+        systemd_boot_detected=true
+    elif [[ -f "/boot/efi/loader/entries" ]] || [[ -d "/boot/efi/loader/loader.conf" ]]; then
+        echo -e "${green}systemd-boot detected at /boot/efi/loader/${no_color}"
+        systemd_boot_detected=true
+    elif [[ -f "/efi/loader/loader.conf" ]] || [[ -d "/efi/loader/entries" ]]; then
+        echo -e "${green}systemd-boot detected at /efi/loader/${no_color}"
+        systemd_boot_detected=true
     fi
-
-    echo -e "${green}Found boot entry: $DEFAULT_ENTRY${no_color}"
-    backup_file "$DEFAULT_ENTRY"
-
-    # Check if IOMMU parameter already exists
-    if grep -q "$IOMMU_PARAM" "$DEFAULT_ENTRY"; then
-        echo -e "${yellow}IOMMU parameter already present in systemd-boot configuration${no_color}"
-        exit 0
+    
+    # Additional checks for systemd-boot
+    if [[ "$systemd_boot_detected" == false ]]; then
+        # Check if bootctl is available and can list entries
+        if command -v bootctl &> /dev/null; then
+            if bootctl list &>/dev/null; then
+                echo -e "${green}systemd-boot detected via bootctl${no_color}"
+                systemd_boot_detected=true
+            fi
+        fi
+        
+        # Check for ESP mount point
+        if findmnt -t vfat /boot &>/dev/null || findmnt -t vfat /boot/efi &>/dev/null || findmnt -t vfat /efi &>/dev/null; then
+            echo -e "${green}EFI System Partition found, likely systemd-boot${no_color}"
+            systemd_boot_detected=true
+        fi
     fi
-
-    # Add IOMMU parameter to the options line
-    if grep -q "^options" "$DEFAULT_ENTRY"; then
-        sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt/" "$DEFAULT_ENTRY"
+    
+    if [[ "$systemd_boot_detected" == true ]]; then
+        return 0  # systemd-boot detected
     else
-        # If no options line exists, add one
-        echo "options $IOMMU_PARAM iommu=pt" | sudo tee -a "$DEFAULT_ENTRY" > /dev/null
+        return 2  # No bootloader detected
     fi
+}
 
-    echo -e "${green}Updated systemd-boot entry with: $IOMMU_PARAM iommu=pt${no_color}"
-else
-    echo -e "${red}Unable to detect bootloader (GRUB or systemd-boot)${no_color}"
-    echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt' to your kernel parameters${no_color}"
-fi
+# Enhanced systemd-boot configuration function
+configure_systemd_boot() {
+    echo -e "${green}Configuring systemd-boot...${no_color}"
+    
+    # Find the correct entries directory
+    local entries_dir=""
+    for path in "/boot/efi/loader/entries" "/boot/loader/entries" "/efi/loader/entries"; do
+        if [[ -d "$path" ]]; then
+            entries_dir="$path"
+            echo -e "${green}Found entries directory: $entries_dir${no_color}"
+            break
+        fi
+    done
+    
+    if [[ -z "$entries_dir" ]]; then
+        echo -e "${red}systemd-boot entries directory not found${no_color}"
+        echo -e "${yellow}Attempting to find entries using bootctl...${no_color}"
+        
+        # Try to get boot entries using bootctl
+        if command -v bootctl &> /dev/null; then
+            local bootctl_output=$(bootctl list 2>/dev/null)
+            if [[ -n "$bootctl_output" ]]; then
+                echo -e "${green}Found boot entries via bootctl:${no_color}"
+                echo "$bootctl_output"
+                
+                # Get the ESP path from bootctl
+                local esp_path=$(bootctl status 2>/dev/null | grep "ESP:" | awk '{print $2}')
+                if [[ -n "$esp_path" ]]; then
+                    entries_dir="$esp_path/loader/entries"
+                    echo -e "${green}Using ESP path: $entries_dir${no_color}"
+                fi
+            fi
+        fi
+    fi
+    
+    if [[ -z "$entries_dir" ]] || [[ ! -d "$entries_dir" ]]; then
+        echo -e "${red}Could not locate systemd-boot entries directory${no_color}"
+        echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt' to your boot entry${no_color}"
+        return 1
+    fi
+    
+    # Find boot entries
+    local boot_entries=($(find "$entries_dir" -name "*.conf" 2>/dev/null))
+    
+    if [[ ${#boot_entries[@]} -eq 0 ]]; then
+        echo -e "${red}No boot entries found in $entries_dir${no_color}"
+        return 1
+    fi
+    
+    echo -e "${green}Found ${#boot_entries[@]} boot entries:${no_color}"
+    for entry in "${boot_entries[@]}"; do
+        echo "  - $(basename "$entry")"
+    done
+    
+    # Process each boot entry
+    for entry in "${boot_entries[@]}"; do
+        echo -e "${green}Processing boot entry: $(basename "$entry")${no_color}"
+        backup_file "$entry"
+        
+        # Check if IOMMU parameter already exists
+        if grep -q "$IOMMU_PARAM" "$entry"; then
+            echo -e "${yellow}IOMMU parameter already present in $(basename "$entry")${no_color}"
+            continue
+        fi
+        
+        # Add IOMMU parameter to the options line
+        if grep -q "^options" "$entry"; then
+            sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt/" "$entry"
+            echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt${no_color}"
+        else
+            # If no options line exists, add one
+            echo "options $IOMMU_PARAM iommu=pt" | sudo tee -a "$entry" > /dev/null
+            echo -e "${green}Added options line to $(basename "$entry") with: $IOMMU_PARAM iommu=pt${no_color}"
+        fi
+    done
+    
+    return 0
+}
+
+detect_bootloader
+detection_result=$?
+
+case $detection_result in
+    0)
+        # systemd-boot detected
+        configure_systemd_boot
+        ;;
+    1)
+        echo -e "${green}Configuring GRUB bootloader...${no_color}"
+
+        GRUB_CONFIG="/etc/default/grub"
+        backup_file "$GRUB_CONFIG"
+
+        # Check if GRUB_CMDLINE_LINUX_DEFAULT exists
+        if ! grep -q "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG"; then
+            echo -e "${red}GRUB_CMDLINE_LINUX_DEFAULT not found in $GRUB_CONFIG${no_color}"
+        fi
+
+        # Check if IOMMU parameter already exists
+        if grep "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG" | grep -q "$IOMMU_PARAM"; then
+            echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
+        fi
+
+        # Add IOMMU parameter to GRUB_CMDLINE_LINUX_DEFAULT
+        sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt\"/" "$GRUB_CONFIG"
+
+        echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt${no_color}"
+
+        # Regenerate GRUB configuration
+        echo -e "${green}Regenerating GRUB configuration...${no_color}"
+        sudo grub-mkconfig -o /boot/grub/grub.cfg
+
+        echo -e "${green}GRUB configuration updated successfully${no_color}"
+        ;;
+    2)
+        # No bootloader detected
+        echo -e "${red}Unable to detect bootloader (GRUB or systemd-boot)${no_color}"
+        echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt' to your kernel parameters${no_color}"
+        ;;
+esac
 
 # Load vfio modules
 echo -e "${green}Loading VFIO kernel modules...${no_color}"

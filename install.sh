@@ -87,6 +87,28 @@ else
 fi
 echo "${green}You'll need to restart your session for this to take effect system-wide${no_color}"
 
+# Check if .bashrc exists
+BASHRC_FILE="$HOME/.bashrc"
+if [ ! -f "$BASHRC_FILE" ]; then
+    echo "Creating .bashrc file"
+    touch "$BASHRC_FILE"
+fi
+if [ ! -f "$BASHRC_FILE" ]; then
+    echo "Creating .bashrc file..."
+    touch "$BASHRC_FILE"
+fi
+# Check if the export line already exists
+if grep -q "ELECTRON_OZONE_PLATFORM_HINT=wayland" "$BASHRC_FILE"; then
+    echo "ELECTRON_OZONE_PLATFORM_HINT=wayland already exists in .bashrc"
+else
+    echo "Adding ELECTRON_OZONE_PLATFORM_HINT=wayland to .bashrc..."
+    echo "" >> "$BASHRC_FILE"
+    echo "# Enable Wayland for Electron apps" >> "$BASHRC_FILE"
+    echo "$EXPORT_LINE" >> "$BASHRC_FILE"
+    echo "Successfully added to .bashrc"
+fi
+source ~/.bashrc || true
+
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
 echo -e "${green}Installing fonts${no_color}"
@@ -159,44 +181,46 @@ echo -e "${green}Detecting bootloader...${no_color}"
 if [[ -f "/boot/grub/grub.cfg" ]] || [[ -d "/boot/grub" ]]; then
     echo -e "${green}GRUB bootloader detected${no_color}"
     echo -e "${green}Configuring GRUB bootloader...${no_color}"
-    
+
     GRUB_CONFIG="/etc/default/grub"
     backup_file "$GRUB_CONFIG"
-    
+
     # Check if GRUB_CMDLINE_LINUX_DEFAULT exists
     if ! grep -q "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG"; then
         echo -e "${red}GRUB_CMDLINE_LINUX_DEFAULT not found in $GRUB_CONFIG${no_color}"
         exit 1
     fi
-    
+
     # Check if IOMMU parameter already exists
     if grep "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG" | grep -q "$IOMMU_PARAM"; then
         echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
         exit 0
     fi
-    
+
     # Add IOMMU parameter to GRUB_CMDLINE_LINUX_DEFAULT
     sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt\"/" "$GRUB_CONFIG"
-    
+
     echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt${no_color}"
-    
+
     # Regenerate GRUB configuration
     echo -e "${green}Regenerating GRUB configuration...${no_color}"
     sudo grub-mkconfig -o /boot/grub/grub.cfg
-    
+
     echo -e "${green}GRUB configuration updated successfully${no_color}"
-elif [[ -d "/boot/loader" ]] && [[ -f "/boot/loader/loader.conf" ]]; then
+elif { [[ -d "/boot/loader" ]] && [[ -f "/boot/loader/loader.conf" ]]; } || \
+     { [[ -d "/boot/efi/loader" ]] && [[ -f "/boot/efi/loader/loader.conf" ]]; }; then
     echo -e "${green}systemd-boot detected${no_color}"
     echo -e "${green}Configuring systemd-boot...${no_color}"
-    
-    # Find the default boot entry
-    BOOT_ENTRIES_DIR="/boot/loader/entries"
-    
-    if [[ ! -d "$BOOT_ENTRIES_DIR" ]]; then
-        echo -e "${red}systemd-boot entries directory not found: $BOOT_ENTRIES_DIR${no_color}"
-        exit 1
+
+    # Determine correct loader path
+    if [[ -d "/boot/loader/entries" ]]; then
+        BOOT_ENTRIES_DIR="/boot/loader/entries"
+    elif [[ -d "/boot/efi/loader/entries" ]]; then
+        BOOT_ENTRIES_DIR="/boot/efi/loader/entries"
+    else
+        echo -e "${red}systemd-boot entries directory not found in /boot/loader/entries or /boot/efi/loader/entries${no_color}"
     fi
-    
+
     # Find the current default entry or the most recent one
     DEFAULT_ENTRY=$(find "$BOOT_ENTRIES_DIR" -name "*.conf" | head -1)
     
@@ -204,16 +228,16 @@ elif [[ -d "/boot/loader" ]] && [[ -f "/boot/loader/loader.conf" ]]; then
         echo -e "${red}No boot entries found in $BOOT_ENTRIES_DIR${no_color}"
         exit 1
     fi
-    
+
     echo -e "${green}Found boot entry: $DEFAULT_ENTRY${no_color}"
     backup_file "$DEFAULT_ENTRY"
-    
+
     # Check if IOMMU parameter already exists
     if grep -q "$IOMMU_PARAM" "$DEFAULT_ENTRY"; then
         echo -e "${yellow}IOMMU parameter already present in systemd-boot configuration${no_color}"
         exit 0
     fi
-    
+
     # Add IOMMU parameter to the options line
     if grep -q "^options" "$DEFAULT_ENTRY"; then
         sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt/" "$DEFAULT_ENTRY"
@@ -221,7 +245,7 @@ elif [[ -d "/boot/loader" ]] && [[ -f "/boot/loader/loader.conf" ]]; then
         # If no options line exists, add one
         echo "options $IOMMU_PARAM iommu=pt" | sudo tee -a "$DEFAULT_ENTRY" > /dev/null
     fi
-    
+
     echo -e "${green}Updated systemd-boot entry with: $IOMMU_PARAM iommu=pt${no_color}"
 else
     echo -e "${red}Unable to detect bootloader (GRUB or systemd-boot)${no_color}"
@@ -287,12 +311,6 @@ echo -e "${green}Setting up permissions for configuration files${no_color}"
 chmod +x ~/.config/waybar/scripts/*.sh || true
 chmod +x ~/.config/sway/scripts/*.sh || true
 
-# Check if .bashrc exists
-BASHRC_FILE="$HOME/.bashrc"
-if [ ! -f "$BASHRC_FILE" ]; then
-    echo "Creating .bashrc file"
-    touch "$BASHRC_FILE"
-fi
 # if ! grep -q 'export PATH="$PATH:$HOME/.local/bin"' ~/.bashrc; then
 #     echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 # fi

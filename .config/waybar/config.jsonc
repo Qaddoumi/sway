@@ -229,6 +229,7 @@
     //       downloaded the most.
     "network": {
         "format-wifi": " {essid} ({signalStrength}%)",
+        //"format-wifi-icon": ["󰤨", "󰤩", "󰤪", "󰤫", "󰤬", "󰤭"],
         "format-ethernet": " {ifname}",
         "format-linked": " {ifname} (No IP)",
         "format-disconnected": " Disconnected",

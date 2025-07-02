@@ -197,16 +197,16 @@ fi
 
 # Check if IOMMU is already enabled
 echo -e "${green}Checking current IOMMU status...${no_color}"
-if dmesg | grep -q "IOMMU enabled"; then
+if sudo dmesg | grep -q "IOMMU enabled"; then
     echo -e "${yellow}IOMMU appears to already be enabled${no_color}"
 else
-    echo -e "${green}IOMMU not currently enabled, proceeding with setup...${no_color}"
+    echo -e "${green}IOMMU not currently enabled${no_color}"
 fi
 
 echo -e "${green}Detecting bootloader...${no_color}"
 detect_bootloader() {
     # Check for GRUB first
-    if [[ -f "/boot/grub/grub.cfg" ]] || [[ -d "/boot/grub" ]]; then
+    if [[ -f "/boot/grub/grub.cfg" ]] || sudo test -d "/boot/grub"; then
         echo -e "${green}GRUB bootloader detected${no_color}"
         return 1  # GRUB detected
     fi
@@ -215,13 +215,13 @@ detect_bootloader() {
     local systemd_boot_detected=false
     
     # Check common systemd-boot paths
-    if [[ -f "/boot/loader/loader.conf" ]] || [[ -d "/boot/loader/entries" ]]; then
+    if [[ -f "/boot/loader/loader.conf" ]] || sudo test -d "/boot/loader/entries"; then
         echo -e "${green}systemd-boot detected at /boot/loader/${no_color}"
         systemd_boot_detected=true
-    elif [[ -f "/boot/efi/loader/entries" ]] || [[ -d "/boot/efi/loader/loader.conf" ]]; then
+    elif [[ -f "/boot/efi/loader/entries" ]] || sudo test -d "/boot/efi/loader/loader.conf"; then
         echo -e "${green}systemd-boot detected at /boot/efi/loader/${no_color}"
         systemd_boot_detected=true
-    elif [[ -f "/efi/loader/loader.conf" ]] || [[ -d "/efi/loader/entries" ]]; then
+    elif [[ -f "/efi/loader/loader.conf" ]] || sudo test -d "/efi/loader/entries"; then
         echo -e "${green}systemd-boot detected at /efi/loader/${no_color}"
         systemd_boot_detected=true
     fi
@@ -257,7 +257,8 @@ configure_systemd_boot() {
     # Find the correct entries directory
     local entries_dir=""
     for path in "/boot/efi/loader/entries" "/boot/loader/entries" "/efi/loader/entries"; do
-        if [[ -d "$path" ]]; then
+        echo -e "${blue}Checking path: $path${no_color}"
+        if sudo test -d "$path"; then
             entries_dir="$path"
             echo -e "${green}Found entries directory: $entries_dir${no_color}"
             break
@@ -285,14 +286,14 @@ configure_systemd_boot() {
         fi
     fi
     
-    if [[ -z "$entries_dir" ]] || [[ ! -d "$entries_dir" ]]; then
+    if [[ -z "$entries_dir" ]] || ! sudo test -d "$entries_dir"; then
         echo -e "${red}Could not locate systemd-boot entries directory${no_color}"
         echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt' to your boot entry${no_color}"
         return 1
     fi
     
     # Find boot entries
-    local boot_entries=($(find "$entries_dir" -name "*.conf" 2>/dev/null))
+    local boot_entries=($(sudo find "$entries_dir" -name "*.conf" 2>/dev/null))
     
     if [[ ${#boot_entries[@]} -eq 0 ]]; then
         echo -e "${red}No boot entries found in $entries_dir${no_color}"
@@ -310,13 +311,13 @@ configure_systemd_boot() {
         backup_file "$entry"
         
         # Check if IOMMU parameter already exists
-        if grep -q "$IOMMU_PARAM" "$entry"; then
+        if sudo grep -q "$IOMMU_PARAM" "$entry"; then
             echo -e "${yellow}IOMMU parameter already present in $(basename "$entry")${no_color}"
             continue
         fi
         
         # Add IOMMU parameter to the options line
-        if grep -q "^options" "$entry"; then
+        if sudo grep -q "^options" "$entry"; then
             sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt/" "$entry"
             echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt${no_color}"
         else
@@ -344,12 +345,12 @@ case $detection_result in
         backup_file "$GRUB_CONFIG"
 
         # Check if GRUB_CMDLINE_LINUX_DEFAULT exists
-        if ! grep -q "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG"; then
+        if ! sudo grep -q "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG"; then
             echo -e "${red}GRUB_CMDLINE_LINUX_DEFAULT not found in $GRUB_CONFIG${no_color}"
         fi
 
         # Check if IOMMU parameter already exists
-        if grep "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG" | grep -q "$IOMMU_PARAM"; then
+        if sudo grep "GRUB_CMDLINE_LINUX_DEFAULT" "$GRUB_CONFIG" | grep -q "$IOMMU_PARAM"; then
             echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
         fi
 
@@ -381,7 +382,7 @@ else
     echo -e "${yellow}VFIO modules configuration already exists${no_color}"
 fi
 
-echo -e "${green}CCreate a script to check IOMMU groups after reboot${no_color}"
+echo -e "${green}Create a script to check IOMMU groups after reboot${no_color}"
 CHECK_SCRIPT="/usr/local/bin/check-iommu-groups"
 cat << 'CHECK_SCRIPT_EOF' | sudo tee "$CHECK_SCRIPT" > /dev/null
 #!/bin/bash
@@ -397,10 +398,10 @@ CHECK_SCRIPT_EOF
 sudo chmod +x "$CHECK_SCRIPT"
 echo -e "${green}Created IOMMU groups checker script at $CHECK_SCRIPT${no_color}"
 
-echo -e "${green}IOMMU setup completed successfully!${no_color}"
+echo -e "${green}IOMMU setup completed${no_color}"
 
 echo -e "${green}After reboot, you can check IOMMU groups with: sudo $CHECK_SCRIPT${no_color}"
-echo -e "${green}You can also verify IOMMU is enabled with: dmesg | grep -i iommu${no_color}"
+echo -e "${green}You can also verify IOMMU is enabled with: sudo dmesg | grep -i iommu${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
@@ -453,6 +454,6 @@ echo -e "${blue}==================================================\n============
 echo ""
 echo -e "${green}Additional steps after reboot:${no_color}"
 echo "1. Check IOMMU groups: sudo $CHECK_SCRIPT${no_color}"
-echo "2. Verify IOMMU is enabled: dmesg | grep -i iommu${no_color}"
+echo "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu${no_color}"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"

@@ -39,7 +39,6 @@ sudo pacman -S --needed --noconfirm pavucontrol # PulseAudio volume control
 sudo pacman -S --needed --noconfirm nemo # File manager
 sudo pacman -S --needed --noconfirm kanshi # Automatic Display manager for Wayland
 sudo pacman -S --needed --noconfirm neovim # Text editor
-sudo pacman -S --needed --noconfirm code # Visual Studio Code
 sudo pacman -S --needed --noconfirm brightnessctl # Brightness control
 sudo pacman -S --needed --noconfirm s-tui # Terminal UI for monitoring CPU
 sudo pacman -S --needed --noconfirm gdu # Disk usage analyzer
@@ -49,6 +48,7 @@ sudo pacman -S --needed --noconfirm fastfetch # Fast system information tool
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome # Web browser
+yay -S --needed --noconfirm visual-studio-code-bin # Visual Studio Code
 yay -S --needed --noconfirm oh-my-posh # Theme engine for terminal
 
 echo -e "${blue}==================================================\n==================================================${no_color}"

@@ -35,11 +35,37 @@ echo -e "${blue}==================================================\n============
 echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 
 sudo pacman -S --needed --noconfirm git base-devel go || true
-git clone https://aur.archlinux.org/yay.git || true
-cd yay || true
-makepkg -si --noconfirm || true
-cd .. && rm -rf yay || true
-yay --version || true
+
+install_yay() {
+    git clone https://aur.archlinux.org/yay.git || true
+    cd yay || true
+    makepkg -si --noconfirm || true
+    cd .. && rm -rf yay || true
+    yay --version || true
+}
+
+if command -v yay &> /dev/null ; then
+    echo "yay is already installed."
+    CURRENT_VERSION=$(yay --version | head -1 | awk '{print $2}')
+    echo "Current version: $CURRENT_VERSION"
+    
+    echo "Checking for latest version..."
+    LATEST_VERSION=$(curl -s "https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=yay" | grep -o '"Version":"[^"]*"' | cut -d'"' -f4 | head -1)
+    echo "Latest version: $LATEST_VERSION"
+
+    if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+        echo "yay is already up to date (version $CURRENT_VERSION)"
+    elif printf '%s\n%s\n' "$LATEST_VERSION" "$CURRENT_VERSION" | sort -V | tail -n1 | grep -q "^$1$"; then
+        echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
+        echo "Proceeding with update..."
+        install_yay
+    else
+        echo "Current version is newer than or equal to latest available"
+    fi
+else
+    echo "yay is not installed. Proceeding with installation..."
+    install_yay
+fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

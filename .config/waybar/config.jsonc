@@ -179,8 +179,7 @@
 
     "backlight": {
         "format": " {percent}%",
-        "format-icons": ["", "", ""],
-        "format-icons-alt": [
+        "format-icons": [
             //"󰹐", // off
             "󱩎", // 10%
             "󱩏", // 20%

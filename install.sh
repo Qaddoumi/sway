@@ -55,9 +55,12 @@ sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # 
 sudo pacman -S --needed --noconfirm playerctl # Media player control
 sudo pacman -S --needed --noconfirm pavucontrol # PulseAudio volume control
 #sudo pacman -S --needed --noconfirm autotiling # Auto-tiling for sway
+sudo pacman -S --needed --noconfirm htop # System monitor
+sudo pacman -S --needed --noconfirm wget # Download utility
 sudo pacman -S --needed --noconfirm nemo # File manager
 sudo pacman -S --needed --noconfirm kanshi # Automatic Display manager for Wayland
-sudo pacman -S --needed --noconfirm neovim # Text editor
+sudo pacman -S --needed --noconfirm nano # Text editor
+sudo pacman -S --needed --noconfirm neovim # Neovim text editor
 sudo pacman -S --needed --noconfirm brightnessctl # Brightness control
 sudo pacman -S --needed --noconfirm s-tui # Terminal UI for monitoring CPU
 sudo pacman -S --needed --noconfirm gdu # Disk usage analyzer

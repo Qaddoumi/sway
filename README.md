@@ -9,7 +9,7 @@ Note: this project is not ready, please don't use it.
 - Run :
 
 ``` shell
-bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/Install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh)
 ```
 
 - Or for only the config files :

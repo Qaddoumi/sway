@@ -393,11 +393,7 @@ CHECK_SCRIPT_EOF
 
 sudo chmod +x "$CHECK_SCRIPT"
 echo -e "${green}Created IOMMU groups checker script at $CHECK_SCRIPT${no_color}"
-
 echo -e "${green}IOMMU setup completed${no_color}"
-
-echo -e "${green}After reboot, you can check IOMMU groups with: sudo $CHECK_SCRIPT${no_color}"
-echo -e "${green}You can also verify IOMMU is enabled with: sudo dmesg | grep -i iommu${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

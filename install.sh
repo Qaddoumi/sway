@@ -171,6 +171,8 @@ echo -e "${green}Starting and autostarting the default network for libvirt${no_c
 sudo virsh net-start default || true
 sudo virsh net-autostart default || true
 
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}Starting IOMMU setup for KVM virtualization...${no_color}"
 
 echo -e "${green}Checking CPU vendor and IOMMU support...${no_color}"

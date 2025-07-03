@@ -157,7 +157,7 @@ font pango:JetBrainsMono Nerd Font Propo 12
 #exec autotiling -l 2
 
 # Automatically manage display configurations
-exec_always pkill kanshi || true; sleep 1; kanshi
+exec_always bash -c 'sleep 3; pkill kanshi 2>/dev/null || true; kanshi'
 
 ## Flameshot
 #exec flameshot
@@ -179,9 +179,7 @@ exec_always pkill kanshi || true; sleep 1; kanshi
 exec_always killall dunst && dunst &
 
 ## Autostart Applications
-
-exec swaymsg "workspace 1; exec kitty"
-
+#exec bash -c 'sleep 4; swaymsg "workspace 1; exec kitty"'
 
 ### Window Rules
 

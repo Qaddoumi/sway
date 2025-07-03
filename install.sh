@@ -110,7 +110,7 @@ else
     echo "Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE..."
     echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" | sudo tee -a "$ENV_FILE" > /dev/null || true
 fi
-echo "${green}You'll need to restart your session for this to take effect system-wide${no_color}"
+echo -e "${green}You'll need to restart your session for this to take effect system-wide${no_color}"
 
 # Check if .bashrc exists
 BASHRC_FILE="$HOME/.bashrc"
@@ -449,7 +449,7 @@ echo -e "${blue}==================================================\n============
 # Final instructions
 echo ""
 echo -e "${green}Additional steps after reboot:${no_color}"
-echo "1. Check IOMMU groups: sudo $CHECK_SCRIPT${no_color}"
-echo "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu${no_color}"
+echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT"
+echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"

@@ -107,9 +107,8 @@ ENV_FILE="/etc/environment"
 if grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$ENV_FILE"; then
     echo "ELECTRON_OZONE_PLATFORM_HINT already exists in $ENV_FILE"
 else
-    sudo echo "Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE..."
-echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" | sudo tee -a "$ENV_FILE" > /dev/null || true
-    sudo echo "Successfully added to $ENV_FILE" || true
+    echo "Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE..."
+    echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" | sudo tee -a "$ENV_FILE" > /dev/null || true
 fi
 echo "${green}You'll need to restart your session for this to take effect system-wide${no_color}"
 

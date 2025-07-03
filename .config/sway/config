@@ -157,7 +157,7 @@ font pango:JetBrainsMono Nerd Font Propo 12
 #exec autotiling -l 2
 
 # Automatically manage display configurations
-exec_always pkill kanshi; kanshi
+exec_always pkill kanshi || true; sleep 1; kanshi
 
 ## Flameshot
 #exec flameshot

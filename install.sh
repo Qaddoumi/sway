@@ -78,7 +78,6 @@ sudo pacman -S --needed --noconfirm kitty # Terminal emulator
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
 sudo pacman -S --needed --noconfirm swaylock # Screen locker for sway
 sudo pacman -S --needed --noconfirm xdg-desktop-portal xdg-desktop-portal-wlr # Portal for Wayland
-sudo pacman -S --needed --noconfirm playerctl # Media player control
 sudo pacman -S --needed --noconfirm pavucontrol # PulseAudio volume control
 #sudo pacman -S --needed --noconfirm autotiling # Auto-tiling for sway
 sudo pacman -S --needed --noconfirm htop # System monitor
@@ -105,29 +104,29 @@ echo -e "${blue}==================================================\n============
 echo -e "${green}Setting up environment variable for Electron apps so they lunch in wayland mode${no_color}"
 ENV_FILE="/etc/environment"
 if grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$ENV_FILE"; then
-    echo "ELECTRON_OZONE_PLATFORM_HINT already exists in $ENV_FILE"
+    echo "${green}ELECTRON_OZONE_PLATFORM_HINT already exists in $ENV_FILE${no_color}"
 else
-    echo "Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE..."
+    echo -e "${green}Adding ELECTRON_OZONE_PLATFORM_HINT to $ENV_FILE...${no_color}"
     echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" | sudo tee -a "$ENV_FILE" > /dev/null || true
 fi
-echo -e "${green}You'll need to restart your session for this to take effect system-wide${no_color}"
+echo -e "${yellow}You'll need to restart your session for this to take effect system-wide${no_color}"
 
 # Check if .bashrc exists
 BASHRC_FILE="$HOME/.bashrc"
 if [ ! -f "$BASHRC_FILE" ]; then
-    echo "Creating .bashrc file"
+    echo -e "${green}Creating .bashrc file${no_color}"
     touch "$BASHRC_FILE"
 fi
 
 # Check if the export line already exists
 if grep -q "ELECTRON_OZONE_PLATFORM_HINT=wayland" "$BASHRC_FILE"; then
-    echo "ELECTRON_OZONE_PLATFORM_HINT=wayland already exists in .bashrc"
+    echo -e "${green}ELECTRON_OZONE_PLATFORM_HINT=wayland already exists in .bashrc${no_color}"
 else
-    echo "Adding ELECTRON_OZONE_PLATFORM_HINT=wayland to .bashrc..."
+    echo -e "${green}Adding ELECTRON_OZONE_PLATFORM_HINT=wayland to .bashrc...${no_color}"
     echo "" >> "$BASHRC_FILE"
     echo "# Enable Wayland for Electron apps" >> "$BASHRC_FILE"
     echo "ELECTRON_OZONE_PLATFORM_HINT=wayland" >> "$BASHRC_FILE"
-    echo "Successfully added to .bashrc"
+    echo -e "${green}Successfully added to .bashrc${no_color}"
 fi
 source ~/.bashrc || true
 
@@ -451,3 +450,4 @@ echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT"
 echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"
+echo -e "${blue}==================================================\n==================================================${no_color}"

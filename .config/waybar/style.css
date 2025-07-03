@@ -194,12 +194,11 @@ label:focus {
 }
 
 #memory {
-    background-color: #9b59b6;
+    background-color: #2ecc71;
 }
 
 #disk {
-    background-color: #7dcfff;
-    border-bottom-color: #7dcfff;
+    background-color: #2ecc71;
 }
 
 #backlight {

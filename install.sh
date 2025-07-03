@@ -160,7 +160,7 @@ sudo pacman -S --needed --noconfirm spice-vdagent # SPICE agent for guest OS
 sudo pacman -S --needed --noconfirm bridge-utils # Utilities for managing network bridges
 
 echo -e "${green}Enabling and starting libvirtd service${no_color}"
-sudo systemctl enable --now libvirtd || true
+sudo systemctl enable libvirtd || true
 
 echo -e "${green}Adding current user to libvirt group${no_color}"
 sudo usermod -aG libvirt $(whoami) || true

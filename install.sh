@@ -118,10 +118,7 @@ if [ ! -f "$BASHRC_FILE" ]; then
     echo "Creating .bashrc file"
     touch "$BASHRC_FILE"
 fi
-if [ ! -f "$BASHRC_FILE" ]; then
-    echo "Creating .bashrc file..."
-    touch "$BASHRC_FILE"
-fi
+
 # Check if the export line already exists
 if grep -q "ELECTRON_OZONE_PLATFORM_HINT=wayland" "$BASHRC_FILE"; then
     echo "ELECTRON_OZONE_PLATFORM_HINT=wayland already exists in .bashrc"

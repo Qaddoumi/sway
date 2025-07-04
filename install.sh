@@ -20,6 +20,9 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
+# Accept login_manager_choice as a command-line argument, default to "ly" if not provided
+login_manager_choice="${1:-ly}"
+
 backup_file() {
     local file=$1
     if [[ -f "$file" ]]; then
@@ -433,14 +436,35 @@ fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
+if $login_manager_choice == "ly"; then
+    echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
 
-sudo pacman -S --needed --noconfirm cmatrix
-sudo pacman -S --needed --noconfirm ly
-sudo systemctl disable display-manager.service || true
-sudo systemctl enable ly.service || true
-# Edit the configuration file /etc/ly/config.ini
-sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini || true
+    sudo pacman -S --needed --noconfirm cmatrix
+    sudo pacman -S --needed --noconfirm ly
+    sudo systemctl disable display-manager.service || true
+    sudo systemctl enable ly.service || true
+    # Edit the configuration file /etc/ly/config.ini to use matrix for animation
+    sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini || true
+elseif $login_manager_choice == "sddm"; then
+    echo -e "${green}Installing and configuring SDDM (Simple Desktop Display Manager)${no_color}"
+
+    pacman -S --needed --noconfirm sddm
+    sudo systemctl disable display-manager.service || true
+    sudo systemctl enable sddm.service || true
+    # Edit the configuration file /etc/sddm.conf to set the default session to sway
+    if ! grep -q "Session=sway" /etc/sddm.conf; then
+        echo -e "${green}Setting default session to sway in /etc/sddm.conf${no_color}"
+        echo -e "[General]\nInputMethod=\n\n[Autologin]\nUser=$USER\nSession=sway" | sudo tee /etc/sddm.conf > /dev/null || true
+    else
+        echo -e "${yellow}Default session is already set to sway in /etc/sddm.conf${no_color}"
+    fi
+    echo -e "${green}Setting up my Hacker theme for SDDM${no_color}"
+    bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh)
+else
+    echo -e "${red}Unsupported login manager: $login_manager_choice${no_color}"
+fi
+
+
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
 # Final instructions

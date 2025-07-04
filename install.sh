@@ -436,7 +436,7 @@ fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-if $login_manager_choice == "ly"; then
+if [[ "$login_manager_choice" == "ly" ]]; then
     echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
 
     sudo pacman -S --needed --noconfirm cmatrix
@@ -445,10 +445,10 @@ if $login_manager_choice == "ly"; then
     sudo systemctl enable ly.service || true
     # Edit the configuration file /etc/ly/config.ini to use matrix for animation
     sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini || true
-elseif $login_manager_choice == "sddm"; then
+elif [[ "$login_manager_choice" == "sddm" ]]; then
     echo -e "${green}Installing and configuring SDDM (Simple Desktop Display Manager)${no_color}"
 
-    pacman -S --needed --noconfirm sddm
+    sudo pacman -S --needed --noconfirm sddm
     sudo systemctl disable display-manager.service || true
     sudo systemctl enable sddm.service || true
     # Edit the configuration file /etc/sddm.conf to set the default session to sway

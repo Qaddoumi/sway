@@ -31,12 +31,12 @@ backup_file() {
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
 # Accept login_manager as a command-line argument, default to "sddm" if not provided
-if [[ $# -ge 1 ]]; then
-    echo -e "${green}Login manager argument provided: $1${no_color}"
-else
-    echo -e "${yellow}No login manager argument provided. Using default: sddm${no_color}"
-fi
 login_manager="${1:-sddm}"
+if [[ $# -ge 1 ]]; then
+    echo -e "${green}Login manager argument provided: $login_manager${no_color}"
+else
+    echo -e "${yellow}No login manager argument provided. Using default: $login_manager${no_color}"
+fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

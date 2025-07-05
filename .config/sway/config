@@ -157,7 +157,7 @@ font pango:JetBrainsMono Nerd Font Propo 12
 #exec autotiling -l 2
 
 # Automatically manage display configurations
-exec_always bash -c 'sleep 3; pkill kanshi 2>/dev/null || true; kanshi'
+exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 
 ## Flameshot
 #exec flameshot

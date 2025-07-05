@@ -20,9 +20,6 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# Accept login_manager_choice as a command-line argument, default to "sddm" if not provided
-login_manager_choice="${1:-sddm}"
-
 backup_file() {
     local file=$1
     if [[ -f "$file" ]]; then
@@ -32,6 +29,14 @@ backup_file() {
 }
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
+
+# Accept login_manager as a command-line argument, default to "sddm" if not provided
+if [[ $# -ge 1 ]]; then
+    echo -e "${green}Login manager argument provided: $1${no_color}"
+else
+    echo -e "${yellow}No login manager argument provided. Using default: sddm${no_color}"
+fi
+login_manager="${1:-sddm}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
@@ -436,7 +441,7 @@ fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-if [[ "$login_manager_choice" == "ly" ]]; then
+if [[ "$login_manager" == "ly" ]]; then
     echo -e "${green}Installing and configuring ly (a lightweight display manager)${no_color}"
 
     sudo pacman -S --needed --noconfirm cmatrix
@@ -445,7 +450,7 @@ if [[ "$login_manager_choice" == "ly" ]]; then
     sudo systemctl enable ly.service || true
     # Edit the configuration file /etc/ly/config.ini to use matrix for animation
     sudo sed -i 's/^animation = .*/animation = matrix/' /etc/ly/config.ini || true
-elif [[ "$login_manager_choice" == "sddm" ]]; then
+elif [[ "$login_manager" == "sddm" ]]; then
     echo -e "${green}Installing and configuring SDDM (Simple Desktop Display Manager)${no_color}"
 
     sudo pacman -S --needed --noconfirm sddm
@@ -461,7 +466,7 @@ elif [[ "$login_manager_choice" == "sddm" ]]; then
     echo -e "${green}Setting up my Hacker theme for SDDM${no_color}"
     bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh)
 else
-    echo -e "${red}Unsupported login manager: $login_manager_choice${no_color}"
+    echo -e "${red}Unsupported login manager: $login_manager${no_color}"
 fi
 
 

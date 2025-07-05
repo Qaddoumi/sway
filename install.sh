@@ -101,6 +101,8 @@ sudo pacman -S --needed --noconfirm jq # JSON processor
 sudo pacman -S --needed --noconfirm bc # Arbitrary precision calculator language
 sudo pacman -S --needed --noconfirm fastfetch # Fast system information tool
 sudo pacman -S --needed --noconfirm less # Pager program for viewing text files
+sudo pacman -S --needed --noconfirm mpv # video player
+sudo pacman -S --needed --noconfirm celluloid # frontend for mpv
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome || true # Web browser
@@ -423,7 +425,7 @@ if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch
+rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list
 mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
 rm -rf ~/sway
 

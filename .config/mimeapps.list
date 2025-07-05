@@ -1,0 +1,40 @@
+
+[Default Applications]
+# Browser
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+
+# Terminal
+x-terminal-emulator=kitty.desktop
+
+# Text Editor
+text/plain=nvim.desktop
+text/x-shellscript=nvim.desktop
+
+# File Manager
+inode/directory=nemo.desktop
+
+# PDF
+application/pdf=google-chrome.desktop  # (Note: Zathura would be better, but not in your list. Install it or use Firefox.)
+
+# Media
+video/*=mpv.desktop
+audio/*=mpv.desktop
+image/*=imv.desktop
+
+# Development
+application/json=code.desktop
+text/x-python=code.desktop
+
+# Virtualization
+application/x-virt-manager=virt-manager.desktop
+
+[Added Associations]
+# Explicit associations (optional, reinforces defaults)
+video/*=mpv.desktop
+audio/*=mpv.desktop
+text/plain=nvim.desktop
+inode/directory=nemo.desktop

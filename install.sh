@@ -20,8 +20,8 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# Accept login_manager_choice as a command-line argument, default to "ly" if not provided
-login_manager_choice="${1:-ly}"
+# Accept login_manager_choice as a command-line argument, default to "sddm" if not provided
+login_manager_choice="${1:-sddm}"
 
 backup_file() {
     local file=$1
@@ -451,13 +451,13 @@ elif [[ "$login_manager_choice" == "sddm" ]]; then
     sudo pacman -S --needed --noconfirm sddm
     sudo systemctl disable display-manager.service || true
     sudo systemctl enable sddm.service || true
-    # Edit the configuration file /etc/sddm.conf to set the default session to sway
-    if ! grep -q "Session=sway" /etc/sddm.conf; then
-        echo -e "${green}Setting default session to sway in /etc/sddm.conf${no_color}"
-        echo -e "[General]\nInputMethod=\n\n[Autologin]\nUser=$USER\nSession=sway" | sudo tee /etc/sddm.conf > /dev/null || true
-    else
-        echo -e "${yellow}Default session is already set to sway in /etc/sddm.conf${no_color}"
-    fi
+    # # Edit the configuration file /etc/sddm.conf to set the default session to sway
+    # if ! grep -q "Session=sway" /etc/sddm.conf; then
+    #     echo -e "${green}Setting default session to sway in /etc/sddm.conf${no_color}"
+    #     echo -e "[General]\nInputMethod=\n\n[Autologin]\nUser=$USER\nSession=sway" | sudo tee /etc/sddm.conf > /dev/null || true
+    # else
+    #     echo -e "${yellow}Default session is already set to sway in /etc/sddm.conf${no_color}"
+    # fi
     echo -e "${green}Setting up my Hacker theme for SDDM${no_color}"
     bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh)
 else

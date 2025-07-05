@@ -221,7 +221,7 @@
         "format-full": " {capacity}%",
         "format-alt": "{icon} {time}",
         "format-icons": ["", "", "", "", ""],
-        "tooltip-format": "Time to charge: {timeTo}\nPower: {power}W\nCharge cycle: {cycles}\nHealth: {health}"
+        "tooltip-format": "{timeTo}\nPower: {power}W\nCharge cycle: {cycles}\nHealth: {health}"
     },
 
     // TODO: add how much has been downloaded 

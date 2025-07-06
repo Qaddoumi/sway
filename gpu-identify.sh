@@ -371,16 +371,6 @@ else
     #exit 1
 fi
 
-# Load vfio modules
-echo -e "${green}Loading VFIO kernel modules...${no_color}"
-MODULES_LOAD_CONF="/etc/modules-load.d/vfio.conf"
-if [[ ! -f "$MODULES_LOAD_CONF" ]]; then
-    echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" | sudo tee "$MODULES_LOAD_CONF" > /dev/null
-    echo -e "${green}Created $MODULES_LOAD_CONF with VFIO modules${no_color}"
-else
-    echo -e "${yellow}VFIO modules configuration already exists${no_color}"
-fi
-
 echo ""
 echo -e "${green}Creating script to check IOMMU groups after reboot...${no_color}"
 CHECK_SCRIPT="/usr/local/bin/check-iommu-groups"
@@ -560,40 +550,115 @@ sudo chmod +x "$SWITCH_SCRIPT"
 echo -e "${green}Created GPU switch script at $SWITCH_SCRIPT${no_color}"
 
 echo ""
-echo -e "${green}=== Additional Configuration Required ===${no_color}"
+# Load vfio modules
+echo -e "${green}Loading VFIO kernel modules...${no_color}"
+MODULES_LOAD_CONF="/etc/modules-load.d/vfio.conf"
+if [[ ! -f "$MODULES_LOAD_CONF" ]]; then
+    echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" | sudo tee "$MODULES_LOAD_CONF" > /dev/null
+    echo -e "${green}Created $MODULES_LOAD_CONF with VFIO modules${no_color}"
+else
+    echo -e "${yellow}VFIO modules configuration already exists${no_color}"
+fi
 echo ""
-echo -e "${green}1. Update initramfs to include VFIO modules:${no_color}"
-echo "   Edit /etc/mkinitcpio.conf and add to MODULES:"
-echo "   MODULES=(... vfio vfio_iommu_type1 vfio_virqfd vfio_pci ...)"
-echo "   Then run: sudo mkinitcpio -P"
-echo ""
-echo -e "${green}2. Blacklist host GPU drivers to prevent automatic binding:${no_color}"
-echo "   Create /etc/modprobe.d/vfio.conf with:"
+echo -e "${green}Update initramfs to include VFIO modules:${no_color}"
+
+# Configuration file
+MKINITCPIO_CONF="/etc/mkinitcpio.conf"
+# VFIO modules to add
+VFIO_MODULES="vfio vfio_iommu_type1 vfio_virqfd vfio_pci"
+
+echo -e "${green}Starting VFIO modules configuration for $MKINITCPIO_CONF...${no_color}"
+
+# Check if mkinitcpio.conf exists
+if [[ ! -f "$MKINITCPIO_CONF" ]]; then
+    echo -e "${red}Error: $MKINITCPIO_CONF not found${no_color}"
+else 
+    # Backup the configuration file
+    backup_file "$MKINITCPIO_CONF"
+
+    # Check if MODULES line exists
+    if ! sudo grep -q "^MODULES=" "$MKINITCPIO_CONF"; then
+        echo -e "${yellow}No MODULES line found in $MKINITCPIO_CONF${no_color}"
+        echo -e "${green}Adding MODULES line with VFIO modules${no_color}"
+        echo "MODULES=($VFIO_MODULES)" | sudo tee -a "$MKINITCPIO_CONF" > /dev/null
+    else
+        # Get current MODULES line
+        current_modules=$(sudo grep "^MODULES=" "$MKINITCPIO_CONF" | sed 's/MODULES=//; s/[()]//g')
+
+        # Check if all VFIO modules are already present
+        all_present=true
+        for module in $VFIO_MODULES; do
+            if ! echo "$current_modules" | grep -qw "$module"; then
+                all_present=false
+                break
+            fi
+        done
+
+        if [[ "$all_present" == true ]]; then
+            echo -e "${yellow}All VFIO modules ($VFIO_MODULES) are already present in $MKINITCPIO_CONF${no_color}"
+        else
+            echo -e "${green}Adding missing VFIO modules to $MKINITCPIO_CONF${no_color}"
+            # Remove existing MODULES line
+            sudo sed -i "/^MODULES=/d" "$MKINITCPIO_CONF"
+            # Add new MODULES line with all modules
+            new_modules="$current_modules $VFIO_MODULES"
+            # Remove duplicates and extra spaces
+            new_modules=$(echo "$new_modules" | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/ $//')
+            echo "MODULES=($new_modules)" | sudo tee -a "$MKINITCPIO_CONF" > /dev/null
+            echo -e "${green}Updated MODULES line with: $new_modules${no_color}"
+        fi
+    fi
+
+    echo -e "${green}VFIO modules configuration completed${no_color}"
+    echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
+
+fi
+
+echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_color}"
+echo "   Create /etc/modprobe.d/vfio.conf"
+
 if [ "$GPU_TYPE" = "nvidia" ]; then
-    echo "   blacklist nvidia"
-    echo "   blacklist nvidia_drm"
-    echo "   blacklist nvidia_modeset"
-    echo "   blacklist nouveau"
+    echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau" | sudo tee /etc/modprobe.d/vfio.conf
 elif [ "$GPU_TYPE" = "amdgpu" ]; then
-    echo "   blacklist amdgpu"
-    echo "   blacklist radeon"
+    echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/vfio.conf
+fi
+
+# Update initramfs
+echo -e "${green}Updating initramfs...${no_color}"
+if sudo mkinitcpio -P; then
+    echo -e "${green}Initramfs updated successfully${no_color}"
+else
+    echo -e "${red}Failed to update initramfs${no_color}"
 fi
 
 echo ""
-echo "3. Create libvirt hook to automate GPU switching:"
-echo "   Create /etc/libvirt/hooks/qemu with:"
-echo "   #!/bin/bash"
-echo "   GUEST_NAME=\"your-vm-name\""
-echo "   COMMAND=\"\$1\""
-echo "   EVENT=\"\$2\""
-echo "   if [ \"\$COMMAND\" = \"\$GUEST_NAME\" ]; then"
-echo "       if [ \"\$EVENT\" = \"prepare\" ]; then"
-echo "           $SWITCH_SCRIPT vm"
-echo "       elif [ \"\$EVENT\" = \"release\" ]; then"
-echo "           $SWITCH_SCRIPT host"
-echo "       fi"
-echo "   fi"
-echo "   Make it executable: sudo chmod +x /etc/libvirt/hooks/qemu"
-echo "   Restart libvirtd: sudo systemctl restart libvirtd"
+LIBVIRTHOOK_SCRIPT="/etc/libvirt/hooks/qemu"
+echo -e "${green}Create libvirt hook to automate GPU switching, at $LIBVIRTHOOK_SCRIPT${no_color}"
+
+cat << LIBVIRTHOOK_SCRIPT_EOF | sudo tee "$LIBVIRTHOOK_SCRIPT" > /dev/null
+#!/bin/bash
+
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[1;33m'
+blue='\033[0;34m'
+no_color='\033[0m' # No Color
+
+GUEST_NAME="your-vm-name"
+COMMAND="\$1"
+EVENT="\$2"
+if [ "\$COMMAND" = "\$GUEST_NAME" ]; then
+    if [ "\$EVENT" = "prepare" ]; then
+        $SWITCH_SCRIPT vm
+    elif [ "\$EVENT" = "release" ]; then
+        $SWITCH_SCRIPT host
+    fi
+fi
+
+LIBVIRTHOOK_SCRIPT_EOF
+sudo chmod +x $LIBVIRTHOOK_SCRIPT
+sudo systemctl restart libvirtd || true
+
+#TODO: the bottom line.
+echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"
 echo ""
-echo -e "${green}Script completed! Use the information above to configure VFIO passthrough.${no_color}"

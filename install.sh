@@ -541,6 +541,173 @@ fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}KVM ACL Setup Sets up ACL permissions for the libvirt images directory${no_color}"
+# Default KVM images directory
+KVM_IMAGES_DIR="/var/lib/libvirt/images"
+target_user="$USER"
+backup_file="/tmp/kvm_acl_backup_$(date +%Y%m%d_%H%M%S).txt"
+
+kvm_acl_setup() {
+
+    echo -e "${green}Checking if ACL tools are installed...${no_color}"
+    if ! command -v getfacl &> /dev/null; then
+        echo -e "${red}getfacl command not found. ACL tools are not installed.${no_color}"
+        echo -e "${green}Install ACL tools:${no_color}"
+        echo -e "${green}  Ubuntu/Debian: sudo apt install acl${no_color}"
+        echo -e "${green}  CentOS/RHEL: sudo yum install acl${no_color}"
+        echo -e "${green}  Fedora: sudo dnf install acl${no_color}"
+        return
+    fi
+    if ! command -v setfacl &> /dev/null; then
+        echo -e "${red}setfacl command not found. ACL tools are not installed.${no_color}"
+        echo -e "${green}Install ACL tools first.${no_color}"
+        return
+    fi
+    echo -e "${green}ACL tools are installed${no_color}"
+
+    echo -e "${green}Checking if directory exists: $KVM_IMAGES_DIR${no_color}"
+    if [[ ! -d "$KVM_IMAGES_DIR" ]]; then
+        echo -e "${red}Directory does not exist: $KVM_IMAGES_DIR${no_color}"
+        echo -e "${green}Please install libvirt first or create the directory manually.${no_color}"
+        return
+    fi
+    echo -e "${green}Directory exists: $KVM_IMAGES_DIR${no_color}"
+
+    echo -e "${green}Checking ACL support for filesystem...${no_color}"
+    # Try to read ACL - if it fails, ACL might not be supported
+    if ! sudo getfacl "$KVM_IMAGES_DIR" &>/dev/null; then
+        echo -e "${red}ACL is not supported on this filesystem${no_color}"
+        echo -e "${green}Make sure the filesystem is mounted with ACL support${no_color}"
+        echo -e "${green}For ext4: mount -o remount,acl /mount/point${no_color}"
+        return
+    fi
+    echo -e "${green}Filesystem supports ACL${no_color}"
+
+    echo -e "${green}Current ACL permissions for $KVM_IMAGES_DIR:${no_color}"
+    echo "----------------------------------------"
+    sudo getfacl "$KVM_IMAGES_DIR" 2>/dev/null || {
+        echo -e "${red}Failed to read ACL permissions${no_color}"
+        return
+    }
+    echo "----------------------------------------"
+
+    echo -e "${green}Backing up current ACL permissions to: $backup_file${no_color}"
+    if sudo getfacl -R "$KVM_IMAGES_DIR" > "$backup_file" 2>/dev/null; then
+        echo -e "${green}ACL permissions backed up to: $backup_file${no_color}"
+        echo "$backup_file"
+    else
+        echo -e "${yellow}Failed to backup ACL permissions, continuing anyway...${no_color}"
+        echo ""
+    fi
+
+    echo -e "${green}Setting up ACL permissions for user: $target_user${no_color}"
+    
+    if ! id "$target_user" &>/dev/null; then
+        echo -e "${red}User does not exist: $target_user${no_color}"
+        return
+    fi
+
+    echo -e "${green}Removing existing ACL permissions from $KVM_IMAGES_DIR...${no_color}"
+    if sudo setfacl -R -b "$KVM_IMAGES_DIR" 2>/dev/null; then
+        echo -e "${green}Existing ACL permissions removed${no_color}"
+    else
+        echo -e "${red}Failed to remove existing ACL permissions${no_color}"
+        return
+    fi
+
+    echo -e "${green}Granting permissions to user: $target_user${no_color}"
+    if sudo setfacl -R -m "u:${target_user}:rwX" "$KVM_IMAGES_DIR" 2>/dev/null; then
+        echo -e "${green}Granted rwX permissions to user: $target_user${no_color}"
+    else
+        echo -e "${red}Failed to grant permissions to user: $target_user${no_color}"
+        return
+    fi
+
+    echo -e "${green}Setting default ACL for new files/directories...${no_color}"
+    if sudo setfacl -m "d:u:${target_user}:rwx" "$KVM_IMAGES_DIR" 2>/dev/null; then
+        echo -e "${green}Default ACL set for user: $target_user${no_color}"
+    else
+        echo -e "${red}Failed to set default ACL for user: $target_user${no_color}"
+        return
+    fi
+
+    echo -e "${green}Verifying ACL setup...${no_color}"
+    # Check if user has the expected permissions
+    local acl_output
+    acl_output=$(sudo getfacl "$KVM_IMAGES_DIR" 2>/dev/null)
+    if echo "$acl_output" | grep -q "user:$target_user:rwx"; then
+        echo -e "${green}User ACL permissions verified${no_color}"
+    else
+        echo -e "${red}User ACL permissions not found${no_color}"
+        echo -e "${red}ACL setup verification failed!${no_color}"
+        if [[ -n "$backup_file" ]]; then
+            echo -e "${green}You can restore from backup: $backup_file${no_color}"
+        fi
+        return
+    fi
+    if echo "$acl_output" | grep -q "default:user:$target_user:rwx"; then
+        echo -e "${green}Default ACL permissions verified${no_color}"
+    else
+        echo -e "${red}Default ACL permissions not found${no_color}"
+        echo -e "${red}ACL setup verification failed!${no_color}"
+        if [[ -n "$backup_file" ]]; then
+            echo -e "${green}You can restore from backup: $backup_file${no_color}"
+        fi
+        return
+    fi
+    echo -e "${green}ACL setup completed successfully!${no_color}"
+
+    echo -e "${green}Testing ACL permissions...${no_color}"
+    # Test file creation
+    local test_file="$KVM_IMAGES_DIR/acl_test_file"
+    local test_dir="$KVM_IMAGES_DIR/acl_test_dir"
+    # Create test file
+    if touch "$test_file" 2>/dev/null; then
+        echo -e "${green}Successfully created test file${no_color}"
+        rm -f "$test_file"
+    else
+        echo -e "${red}Failed to create test file${no_color}"
+        echo -e "${red}ACL permissions test failed!${no_color}"
+        return 1
+    fi
+    # Create test directory
+    if mkdir "$test_dir" 2>/dev/null; then
+        echo -e "${green}Successfully created test directory${no_color}"
+        rmdir "$test_dir"
+    else
+        echo -e "${red}Failed to create test directory${no_color}"
+        echo -e "${red}ACL permissions test failed!${no_color}"
+        return 1
+    fi
+    echo -e "${green}ACL permissions test passed!${no_color}"
+
+    echo -e "${green}Final ACL permissions for $KVM_IMAGES_DIR:${no_color}"
+    echo "========================================"
+    sudo getfacl "$KVM_IMAGES_DIR" 2>/dev/null || {
+        echo -e "${red}Failed to read final ACL permissions${no_color}"
+        return
+    }
+
+}
+
+echo -e "${green}Target directory: $KVM_IMAGES_DIR${no_color}"
+echo -e "${green}Target user: $target_user${no_color}"
+
+kvm_acl_setup
+
+echo -e "${green}KVM ACL setup completed${no_color}"
+echo -e "${green}New files and directories should inherit proper permissions.${no_color}"
+if [[ -n "$backup_file" ]]; then
+    echo -e "${green}Backup file: $backup_file${no_color}"
+fi
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
+#TODO: Add AMD SEV Support
+#TODO: Optimise Host with TuneD
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}adding user to necessary groups...${no_color}"
 
 sudo usermod -aG video $USER || true

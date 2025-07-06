@@ -168,6 +168,7 @@ sudo pacman -S --needed --noconfirm libosinfo # Library for managing OS informat
 sudo pacman -S --needed --noconfirm tuned # system tuning service for linux allows us to optimise the hypervisor for speed.
 sudo pacman -S --needed --noconfirm spice-vdagent # SPICE agent for guest OS
 sudo pacman -S --needed --noconfirm bridge-utils # Utilities for managing network bridges
+sudo pacman -S --needed --noconfirm linux-headers # for vfio modules
 
 echo -e "${green}Enabling and starting libvirtd service${no_color}"
 sudo systemctl enable libvirtd || true
@@ -394,8 +395,8 @@ echo -e "${green}Create a script to check IOMMU groups after reboot${no_color}"
 CHECK_SCRIPT="/usr/local/bin/check-iommu-groups"
 cat << 'CHECK_SCRIPT_EOF' | sudo tee "$CHECK_SCRIPT" > /dev/null
 #!/bin/bash
-echo "IOMMU Groups:${no_color}"
-echo "=============${no_color}"
+echo "IOMMU Groups:"
+echo "============="
 for d in /sys/kernel/iommu_groups/*/devices/*; do
     n=${d#*/iommu_groups/*}; n=${n%%/*}
     printf 'IOMMU Group %s ' "$n"
@@ -705,6 +706,10 @@ echo -e "${blue}==================================================\n============
 
 #TODO: Add AMD SEV Support
 #TODO: Optimise Host with TuneD
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
+
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

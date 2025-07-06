@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # GPU PCI ID Identifier Script for VFIO Passthrough
-# This script identifies GPU PCI IDs needed for VFIO configuration
+# This script identifies GPU PCI IDs and generates VFIO configuration
 
 echo "=== GPU PCI ID Identifier for VFIO Passthrough ==="
 echo ""
@@ -15,7 +15,7 @@ no_color='\033[0m' # No Color
 
 # Function to extract PCI ID from lspci output
 extract_pci_id() {
-    echo "$1" | grep -o '\[.*\]' | tail -1 | tr -d '[]'
+    echo "$1" | grep -o '\[.*\]' | tail -1 | tr -d '[]' | sed "s/^\(.*\)$/'\1'/"
 }
 
 # Function to extract PCI address
@@ -101,14 +101,19 @@ echo ""
 
 GPU_PCI_ID=""
 AUDIO_PCI_ID=""
+VFIO_IDS=""
+GPU_TYPE=""
 
 if [ -n "$nvidia_gpu" ]; then
     nvidia_gpu_id=$(extract_pci_id "$nvidia_gpu")
     nvidia_pci_addr=$(extract_pci_address "$nvidia_gpu")
+    GPU_TYPE="nvidia"
     
     echo -e "${green}=== NVIDIA GPU Passthrough Configuration ===${no_color}"
     echo -e "${yellow}GPU PCI Address:${no_color} $nvidia_pci_addr"
     echo -e "${yellow}GPU PCI ID:${no_color} $nvidia_gpu_id"
+    
+    VFIO_IDS="$nvidia_gpu_id"
     
     if [ -n "$nvidia_audio" ]; then
         nvidia_audio_id=$(extract_pci_id "$nvidia_audio")
@@ -116,23 +121,9 @@ if [ -n "$nvidia_gpu" ]; then
         echo -e "${yellow}Audio PCI Address:${no_color} $nvidia_audio_addr"
         echo -e "${yellow}Audio PCI ID:${no_color} $nvidia_audio_id"
         
-        echo ""
-        echo -e "${green}Kernel parameter for GRUB:${no_color}"
-        echo "intel_iommu=on iommu=pt vfio-pci.ids=$nvidia_gpu_id,$nvidia_audio_id"
-        
-        echo ""
-        echo -e "${green}PCI addresses for unbinding script:${no_color}"
-        echo "GPU: $nvidia_pci_addr"
-        echo "Audio: $nvidia_audio_addr"
-    else
-        echo ""
-        echo -e "${green}Kernel parameter for GRUB:${no_color}"
-        echo "intel_iommu=on iommu=pt vfio-pci.ids=$nvidia_gpu_id"
-        
-        echo ""
-        echo -e "${green}PCI address for unbinding script:${no_color}"
-        echo "GPU: $nvidia_pci_addr"
+        VFIO_IDS="$VFIO_IDS $nvidia_audio_id"
     fi
+    
     GPU_PCI_ID="$nvidia_pci_addr"
     AUDIO_PCI_ID="$nvidia_audio_addr"
 fi
@@ -140,11 +131,14 @@ fi
 if [ -n "$amd_gpu" ]; then
     amd_gpu_id=$(extract_pci_id "$amd_gpu")
     amd_pci_addr=$(extract_pci_address "$amd_gpu")
+    GPU_TYPE="amdgpu"
     
     echo ""
     echo -e "${green}=== AMD GPU Passthrough Configuration ===${no_color}"
     echo -e "${yellow}GPU PCI Address:${no_color} $amd_pci_addr"
     echo -e "${yellow}GPU PCI ID:${no_color} $amd_gpu_id"
+    
+    VFIO_IDS="$amd_gpu_id"
     
     if [ -n "$amd_audio" ]; then
         amd_audio_id=$(extract_pci_id "$amd_audio")
@@ -152,25 +146,31 @@ if [ -n "$amd_gpu" ]; then
         echo -e "${yellow}Audio PCI Address:${no_color} $amd_audio_addr"
         echo -e "${yellow}Audio PCI ID:${no_color} $amd_audio_id"
         
-        echo ""
-        echo -e "${green}Kernel parameter for GRUB:${no_color}"
-        echo "intel_iommu=on iommu=pt vfio-pci.ids=$amd_gpu_id,$amd_audio_id"
-        
-        echo ""
-        echo -e "${green}PCI addresses for unbinding script:${no_color}"
-        echo "GPU: $amd_pci_addr"
-        echo "Audio: $amd_audio_addr"
-    else
-        echo ""
-        echo -e "${green}Kernel parameter for GRUB:${no_color}"
-        echo "intel_iommu=on iommu=pt vfio-pci.ids=$amd_gpu_id"
-        
-        echo ""
-        echo -e "${green}PCI address for unbinding script:${no_color}"
-        echo "GPU: $amd_pci_addr"
+        VFIO_IDS="$VFIO_IDS $amd_audio_id"
     fi
+    
     GPU_PCI_ID="$amd_pci_addr"
     AUDIO_PCI_ID="$amd_audio_addr"
+fi
+
+if [ -n "$VFIO_IDS" ]; then
+    echo ""
+    echo -e "${green}Kernel parameter for GRUB:${no_color}"
+    echo "intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS"
+    
+    echo ""
+    echo -e "${green}To add to GRUB:${no_color}"
+    echo "1. Edit /etc/default/grub"
+    echo "2. Add or modify GRUB_CMDLINE_LINUX_DEFAULT to include:"
+    echo "   GRUB_CMDLINE_LINUX_DEFAULT=\"... intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS\""
+    echo "3. Update GRUB: sudo grub-mkconfig -o /boot/grub/grub.cfg"
+    echo ""
+    echo -e "${green}PCI addresses for unbinding script:${no_color}"
+    echo "GPU: $GPU_PCI_ID"
+    [ -n "$AUDIO_PCI_ID" ] && echo "Audio: $AUDIO_PCI_ID"
+else
+    echo -e "${red}No valid GPU configuration found for VFIO passthrough${no_color}"
+    exit 1
 fi
 
 echo ""
@@ -199,65 +199,137 @@ if [ -d "/sys/kernel/iommu_groups" ]; then
     done
 else
     echo -e "${red}IOMMU not enabled or not available${no_color}"
-    echo "Make sure VT-d is enabled in BIOS and intel_iommu=on is in kernel parameters"
+    echo "Make sure VT-d (Intel) or AMD-Vi is enabled in BIOS and intel_iommu=on or amd_iommu=on is in kernel parameters"
+    exit 1
 fi
 
 echo ""
 
-# Additional recommendations
-# echo -e "${green}6. Recommendations...${no_color}"
-# echo ""
-
-# if [ -n "$intel_gpu" ] && [ -n "$nvidia_gpu" ]; then
-#     echo -e "${green}✓ Perfect setup detected: Intel iGPU + NVIDIA dGPU${no_color}"
-#     echo "  - Intel iGPU will handle host display"
-#     echo "  - NVIDIA dGPU can be passed through to VM"
-# elif [ -n "$intel_gpu" ] && [ -n "$amd_gpu" ]; then
-#     echo -e "${green}✓ Good setup detected: Intel iGPU + AMD dGPU${no_color}"
-#     echo "  - Intel iGPU will handle host display"
-#     echo "  - AMD dGPU can be passed through to VM"
-# elif [ -n "$nvidia_gpu" ] && [ -z "$intel_gpu" ]; then
-#     echo -e "${yellow}⚠ Single NVIDIA GPU detected${no_color}"
-#     echo "  - You'll need SSH or remote access when GPU is passed through"
-#     echo "  - Consider enabling Intel iGPU in BIOS if available"
-# else
-#     echo -e "${yellow}⚠ Unusual GPU configuration detected${no_color}"
-#     echo "  - Manual configuration may be required"
-# fi
-
-echo ""
-echo -e "${green}Script completed! Use the information above to configure VFIO passthrough.${no_color}"
-
-
-echo -e "${green}Create a script to switch the gpu between host and guests${no_color}"
+# Generate GPU switch script
+echo -e "${green}6. Creating GPU switch script...${no_color}"
 SWITCH_SCRIPT="/usr/local/bin/gpu-switch.sh"
 
-login_manager="sddm"
+login_manager="sddm"  
+
+# Determine driver based on GPU type
+case "$GPU_TYPE" in
+    "nvidia")
+        GPU_DRIVER="nvidia"
+        AUDIO_DRIVER="snd_hda_intel"
+        ;;
+    "amdgpu")
+        GPU_DRIVER="amdgpu"
+        AUDIO_DRIVER="snd_hda_intel"
+        ;;
+    *)
+        echo -e "${red}No supported GPU driver detected for switching${no_color}"
+        exit 1
+        ;;
+esac
 
 # Generate the script
 cat << SWITCH_SCRIPT_EOF | sudo tee "$SWITCH_SCRIPT" > /dev/null
 #!/bin/bash
-login_manager="$login_manager"
+
+# GPU Switch Script for VFIO Passthrough
+# Switches GPU between host and VM
+
+GPU_PCI_ID="$GPU_PCI_ID"
+AUDIO_PCI_ID="$AUDIO_PCI_ID"
+GPU_DRIVER="$GPU_DRIVER"
+AUDIO_DRIVER="$AUDIO_DRIVER"
+LOGIN_MANAGER="$login_manager"
 
 case "\$1" in
     "vm")
-        # Stop display manager and unload nvidia
-        sudo systemctl stop "\$login_manager" || true
-        sudo rmmod nvidia_uvm nvidia_drm nvidia_modeset nvidia
-        echo "$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/$GPU_PCI_ID/driver/unbind
-        echo "$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/$AUDIO_PCI_ID/driver/unbind
-        sudo modprobe vfio-pci
-        echo "GPU switched to VM mode"
+        echo -e "Switching GPU to VM mode..."
+        # Stop display manager
+        sudo systemctl stop "\$LOGIN_MANAGER" || { echo -e "Failed to stop display manager"; exit 1; }
+        
+        # Unload host GPU drivers
+        sudo modprobe -r \$GPU_DRIVER 2>/dev/null || true
+        sudo modprobe -r nvidia_drm nvidia_modeset nvidia_uvm 2>/dev/null || true
+        
+        # Unbind devices from host drivers
+        [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
+        [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
+        
+        # Bind to vfio-pci
+        sudo modprobe vfio-pci || { echo -e "Failed to load vfio-pci"; exit 1; }
+        [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
+        [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
+        
+        echo -e "GPU switched to VM mode"
         ;;
     "host")
-        # Reload nvidia and restart display manager
-        sudo rmmod vfio-pci
-        echo "$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/nvidia/bind
-        echo "$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/snd_hda_intel/bind
-        sudo modprobe nvidia
-        sudo systemctl start "\$login_manager" || true
-        echo "GPU switched to host mode"
+        echo -e "Switching GPU to host mode..."
+        # Unbind from vfio-pci
+        sudo modprobe -r vfio-pci 2>/dev/null || true
+        [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
+        [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
+        
+        # Clear driver overrides
+        [ -n "\$GPU_PCI_ID" ] && echo "" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver_override 2>/dev/null || true
+        [ -n "\$AUDIO_PCI_ID" ] && echo "" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver_override 2>/dev/null || true
+        
+        # Bind to host drivers
+        [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$GPU_DRIVER/bind 2>/dev/null || true
+        [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$AUDIO_DRIVER/bind 2>/dev/null || true
+        
+        # Load host GPU driver
+        sudo modprobe \$GPU_DRIVER || { echo -e "Failed to load \$GPU_DRIVER"; exit 1; }
+        
+        # Restart display manager
+        sudo systemctl start "\$LOGIN_MANAGER" || { echo -e "Failed to start display manager"; exit 1; }
+        
+        echo -e "GPU switched to host mode"
+        ;;
+    *)
+        echo -e "Usage: \$0 {vm|host}"
+        exit 1
         ;;
 esac
 SWITCH_SCRIPT_EOF
+
 sudo chmod +x "$SWITCH_SCRIPT"
+echo -e "${green}Created GPU switch script at $SWITCH_SCRIPT${no_color}"
+echo ""
+
+# Recommendations
+echo -e "${green}7. Next Steps...${no_color}"
+echo ""
+echo "1. Ensure VFIO modules are loaded at boot:"
+echo "   Edit /etc/mkinitcpio.conf and add to MODULES:"
+echo "   MODULES=(... vfio vfio_iommu_type1 vfio_virqfd vfio_pci."
+
+echo "   Then run: sudo mkinitcpio -P"
+echo ""
+echo "2. Blacklist host GPU drivers to prevent automatic binding:"
+echo "   Create /etc/modprobe.d/vfio.conf with:"
+if [ "$GPU_TYPE" = "nvidia" ]; then
+    echo "   blacklist nvidia"
+    echo "   blacklist nvidia_drm"
+    echo "   blacklist nvidia_modeset"
+    echo "   blacklist nouveau"
+elif [ "$GPU_TYPE" = "amdgpu" ]; then
+    echo "   blacklist amdgpu"
+    echo "   blacklist radeon"
+fi
+echo ""
+echo "3. Create libvirt hook to automate GPU switching:"
+echo "   Create /etc/libvirt/hooks/qemu with:"
+echo "   #!/bin/bash"
+echo "   GUEST_NAME=\"your-vm-name\""
+echo "   COMMAND=\"\$1\""
+echo "   EVENT=\"\$2\""
+echo "   if [ \"\$COMMAND\" = \"\$GUEST_NAME\" ]; then"
+echo "       if [ \"\$EVENT\" = \"prepare\" ]; then"
+echo "           $SWITCH_SCRIPT vm"
+echo "       elif [ \"\$EVENT\" = \"release\" ]; then"
+echo "           $SWITCH_SCRIPT host"
+echo "       fi"
+echo "   fi"
+echo "   Make it executable: sudo chmod +x /etc/libvirt/hooks/qemu"
+echo "   Restart libvirtd: sudo systemctl restart libvirtd"
+echo ""
+echo -e "${green}Script completed! Use the information above to configure VFIO passthrough.${no_color}"

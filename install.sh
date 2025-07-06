@@ -21,10 +21,12 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 backup_file() {
-    local file=$1
+    local file="$1"
     if [[ -f "$file" ]]; then
         sudo cp "$file" "$file.backup.$(date +%Y%m%d_%H%M%S)"
         echo -e "${green}Backed up $file${no_color}"
+    else
+        echo -e "${yellow}File $file does not exist, skipping backup${no_color}"
     fi
 }
 

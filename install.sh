@@ -409,6 +409,166 @@ echo -e "${green}IOMMU setup completed${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}Nested Virtualization Setup${no_color}"
+echo -e "${green}Detecting CPU type and enables nested virtualization${no_color}"
+
+enable_nested_virtualization(){
+
+    echo -e "${green}Detecting CPU vendor...${no_color}"
+    cpu_type=""
+    cpu_vendor=$(grep -m1 "vendor_id" /proc/cpuinfo | cut -d: -f2 | tr -d ' ')
+    case "$cpu_vendor" in
+        "GenuineIntel")
+            cpu_type="intel"
+            ;;
+        "AuthenticAMD")
+            cpu_type="amd"
+            ;;
+        *)
+            echo -e "${red}Unknown CPU vendor: $cpu_vendor${no_color}"
+            echo -e "${red}Supported vendors: Intel, AMD${no_color}"
+            return
+            ;;
+    esac
+    echo -e "${green}Detected CPU: $(echo "$cpu_type" | tr '[:lower:]' '[:upper:]')${no_color}"
+
+    echo -e "${green}Checking KVM modules...${no_color}"
+    if ! lsmod | grep -q "^kvm "; then
+        echo -e "${red}KVM module is not loaded${no_color}"
+        echo -e "${red}Please install KVM first: sudo pacman -S qemu-full${no_color}"
+        return
+    fi
+    kvm_module=""
+    case "$cpu_type" in
+        "intel")
+            kvm_module="kvm_intel"
+            ;;
+        "amd")
+            kvm_module="kvm_amd"
+            ;;
+    esac
+    if ! lsmod | grep -q "^$kvm_module "; then
+        echo -e "${red}$kvm_module module is not loaded${no_color}"
+        echo -e "${green}Loading $kvm_module module...${no_color}"
+        sudo modprobe "$kvm_module"
+    fi
+    echo -e "${green}KVM modules are loaded${no_color}"
+
+    check_nested_status() {
+        local cpu_type=$1
+        
+        echo -e "${green}Checking current nested virtualization status...${no_color}"
+        
+        local nested_file=""
+        case "$cpu_type" in
+            "intel")
+                nested_file="/sys/module/kvm_intel/parameters/nested"
+                ;;
+            "amd")
+                nested_file="/sys/module/kvm_amd/parameters/nested"
+                ;;
+        esac
+        
+        if [[ -f "$nested_file" ]]; then
+            local status
+            status=$(cat "$nested_file")
+            case "$status" in
+                "Y"|"1")
+                    echo -e "${green}Nested virtualization is already enabled${no_color}"
+                    return 0
+                    ;;
+                "N"|"0")
+                    echo -e "${yellow}Nested virtualization is currently disabled${no_color}"
+                    return 1
+                    ;;
+                *)
+                    echo -e "${yellow}Unknown nested virtualization status: $status${no_color}"
+                    return 1
+                    ;;
+            esac
+        else
+            echo -e "${yellow}Cannot determine nested virtualization status${no_color}"
+            return 1
+        fi
+    }
+    if check_nested_status "$cpu_type"; then
+        echo -e "${green}Nested virtualization is already enabled, but continuing with requested action...${no_color}"
+    fi
+
+    echo -e "${green}Enabling nested virtualization for current session...${no_color}"
+    case "$cpu_type" in
+        "intel")
+            sudo modprobe -r kvm_intel
+            sudo modprobe kvm_intel nested=1
+            echo -e "${green}Nested virtualization enabled for current session${no_color}"
+            ;;
+        "amd")
+            sudo modprobe -r kvm_amd
+            sudo modprobe kvm_amd nested=1
+            ;;
+    esac
+
+    echo -e "${green}Enabling persistent nested virtualization...${no_color}"
+    conf_file=""
+    module_name=""
+    case "$cpu_type" in
+        "intel")
+            conf_file="/etc/modprobe.d/kvm-intel.conf"
+            module_name="kvm_intel"
+            ;;
+        "amd")
+            conf_file="/etc/modprobe.d/kvm-amd.conf"
+            module_name="kvm_amd"
+            ;;
+    esac
+    echo -e "${green}Check if the configuration file exist${no_color}"
+    if [[ -f "$conf_file" ]] && grep -q "nested=1" "$conf_file"; then
+        echo -e "${green}Persistent nested virtualization is already configured${no_color}"
+    else
+        echo "options $module_name nested=1" | sudo tee "$conf_file"
+        echo -e "${green}Persistent nested virtualization configuration created: $conf_file${no_color}"
+    fi
+
+    echo -e "${green}Verifying nested virtualization...${no_color}"
+    nested_file=""
+    case "$cpu_type" in
+        "intel")
+            nested_file="/sys/module/kvm_intel/parameters/nested"
+            ;;
+        "amd")
+            nested_file="/sys/module/kvm_amd/parameters/nested"
+            ;;
+    esac
+    if [[ -f "$nested_file" ]]; then
+        status=$(cat "$nested_file")
+        case "$status" in
+            "Y"|"1")
+                echo -e "${green}Nested virtualization is now enabled!${no_color}"
+                ;;
+            *)
+                echo -e "${red}Failed to enable nested virtualization${no_color}"
+                ;;
+        esac
+    else
+        echo -e "${red}Cannot verify nested virtualization status${no_color}"
+    fi
+
+    echo -e "${green}Nested virtualization setup completed${no_color}"
+    echo -e "${green}Note: Persistent configuration will take effect after the next reboot${no_color}"
+    echo -e "${green}or when the KVM modules are reloaded.${no_color}"
+}
+
+echo -e "${GREEN}Checking virtualization support...${no_color}"
+if ! grep -q -E "(vmx|svm)" /proc/cpuinfo; then
+    echo -e "${yellow}CPU does not support virtualization (VT-x/AMD-V)${no_color}"
+    echo -e "${yellow}Please enable virtualization in your BIOS/UEFI settings${no_color}"
+else
+    echo -e "${GREEN}CPU supports virtualization${no_color}"
+    enable_nested_virtualization
+fi
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}adding user to necessary groups...${no_color}"
 
 sudo usermod -aG video $USER || true

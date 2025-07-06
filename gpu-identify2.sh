@@ -13,9 +13,9 @@ yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # No Color
 
-# Function to extract PCI ID from lspci output
+# Function to extract PCI ID (vendor:device) from lspci output
 extract_pci_id() {
-    echo "$1" | grep -o '\[.*\]' | tail -1 | tr -d '[]' | sed "s/^\(.*\)$/'\1'/"
+    echo "$1" | grep -o '[0-9a-f]\{4\}:[0-9a-f]\{4\}' | tail -1
 }
 
 # Function to extract PCI address
@@ -121,7 +121,7 @@ if [ -n "$nvidia_gpu" ]; then
         echo -e "${yellow}Audio PCI Address:${no_color} $nvidia_audio_addr"
         echo -e "${yellow}Audio PCI ID:${no_color} $nvidia_audio_id"
         
-        VFIO_IDS="$VFIO_IDS $nvidia_audio_id"
+        VFIO_IDS="$VFIO_IDS,$nvidia_audio_id"
     fi
     
     GPU_PCI_ID="$nvidia_pci_addr"
@@ -146,7 +146,7 @@ if [ -n "$amd_gpu" ]; then
         echo -e "${yellow}Audio PCI Address:${no_color} $amd_audio_addr"
         echo -e "${yellow}Audio PCI ID:${no_color} $amd_audio_id"
         
-        VFIO_IDS="$VFIO_IDS $amd_audio_id"
+        VFIO_IDS="$VFIO_IDS,$amd_audio_id"
     fi
     
     GPU_PCI_ID="$amd_pci_addr"
@@ -156,13 +156,21 @@ fi
 if [ -n "$VFIO_IDS" ]; then
     echo ""
     echo -e "${green}Kernel parameter for GRUB:${no_color}"
-    echo "intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS"
+    if [[ $nvidia_gpu == *"NVIDIA"* ]]; then
+        echo "intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS"
+    else
+        echo "amd_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS"
+    fi
     
     echo ""
     echo -e "${green}To add to GRUB:${no_color}"
     echo "1. Edit /etc/default/grub"
     echo "2. Add or modify GRUB_CMDLINE_LINUX_DEFAULT to include:"
-    echo "   GRUB_CMDLINE_LINUX_DEFAULT=\"... intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS\""
+    if [[ $nvidia_gpu == *"NVIDIA"* ]]; then
+        echo "   GRUB_CMDLINE_LINUX_DEFAULT=\"... intel_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS\""
+    else
+        echo "   GRUB_CMDLINE_LINUX_DEFAULT=\"... amd_iommu=on iommu=pt vfio-pci.ids=$VFIO_IDS\""
+    fi
     echo "3. Update GRUB: sudo grub-mkconfig -o /boot/grub/grub.cfg"
     echo ""
     echo -e "${green}PCI addresses for unbinding script:${no_color}"
@@ -209,7 +217,7 @@ echo ""
 echo -e "${green}6. Creating GPU switch script...${no_color}"
 SWITCH_SCRIPT="/usr/local/bin/gpu-switch.sh"
 
-login_manager="sddm"  
+login_manager="sddm"
 
 # Determine driver based on GPU type
 case "$GPU_TYPE" in
@@ -231,6 +239,12 @@ esac
 cat << SWITCH_SCRIPT_EOF | sudo tee "$SWITCH_SCRIPT" > /dev/null
 #!/bin/bash
 
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[1;33m'
+blue='\033[0;34m'
+no_color='\033[0m' # No Color
+
 # GPU Switch Script for VFIO Passthrough
 # Switches GPU between host and VM
 
@@ -242,9 +256,9 @@ LOGIN_MANAGER="$login_manager"
 
 case "\$1" in
     "vm")
-        echo -e "Switching GPU to VM mode..."
+        echo -e "${green}Switching GPU to VM mode...${no_color}"
         # Stop display manager
-        sudo systemctl stop "\$LOGIN_MANAGER" || { echo -e "Failed to stop display manager"; exit 1; }
+        sudo systemctl stop "\$LOGIN_MANAGER" || { echo -e "${red}Failed to stop display manager${no_color}"; exit 1; }
         
         # Unload host GPU drivers
         sudo modprobe -r \$GPU_DRIVER 2>/dev/null || true
@@ -255,14 +269,14 @@ case "\$1" in
         [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
         
         # Bind to vfio-pci
-        sudo modprobe vfio-pci || { echo -e "Failed to load vfio-pci"; exit 1; }
+        sudo modprobe vfio-pci || { echo -e "${red}Failed to load vfio-pci${no_color}"; exit 1; }
         [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         
-        echo -e "GPU switched to VM mode"
+        echo -e "${green}GPU switched to VM mode${no_color}"
         ;;
     "host")
-        echo -e "Switching GPU to host mode..."
+        echo -e "${green}Switching GPU to host mode...${no_color}"
         # Unbind from vfio-pci
         sudo modprobe -r vfio-pci 2>/dev/null || true
         [ -n "\$GPU_PCI_ID" ] && echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
@@ -277,15 +291,15 @@ case "\$1" in
         [ -n "\$AUDIO_PCI_ID" ] && echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$AUDIO_DRIVER/bind 2>/dev/null || true
         
         # Load host GPU driver
-        sudo modprobe \$GPU_DRIVER || { echo -e "Failed to load \$GPU_DRIVER"; exit 1; }
+        sudo modprobe \$GPU_DRIVER || { echo -e "${red}Failed to load \$GPU_DRIVER${no_color}"; exit 1; }
         
         # Restart display manager
-        sudo systemctl start "\$LOGIN_MANAGER" || { echo -e "Failed to start display manager"; exit 1; }
+        sudo systemctl start "\$LOGIN_MANAGER" || { echo -e "${red}Failed to start display manager${no_color}"; exit 1; }
         
-        echo -e "GPU switched to host mode"
+        echo -e "${green}GPU switched to host mode${no_color}"
         ;;
     *)
-        echo -e "Usage: \$0 {vm|host}"
+        echo -e "${red}Usage: \$0 {vm|host}${no_color}"
         exit 1
         ;;
 esac
@@ -300,8 +314,7 @@ echo -e "${green}7. Next Steps...${no_color}"
 echo ""
 echo "1. Ensure VFIO modules are loaded at boot:"
 echo "   Edit /etc/mkinitcpio.conf and add to MODULES:"
-echo "   MODULES=(... vfio vfio_iommu_type1 vfio_virqfd vfio_pci."
-
+echo "   MODULES=(... vfio vfio_iommu_type1 vfio_virqfd vfio_pci ...)"
 echo "   Then run: sudo mkinitcpio -P"
 echo ""
 echo "2. Blacklist host GPU drivers to prevent automatic binding:"

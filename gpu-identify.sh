@@ -4,6 +4,8 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
+login_manager="sddm"
+
 # Colors for better readability
 red='\033[0;31m'
 green='\033[0;32m'
@@ -39,7 +41,7 @@ elif [[ "$CPU_VENDOR" == "AuthenticAMD" ]]; then
 else
     echo -e "${red}Unknown CPU vendor: $CPU_VENDOR${no_color}"
     echo -e "${red}Please manually add the appropriate IOMMU parameter for your CPU${no_color}"
-    exit 1
+    #exit 1
 fi
 
 # Check if IOMMU is already enabled
@@ -121,7 +123,7 @@ gpu_devices=$(lspci -nn | grep -E "(VGA|3D controller)")
 
 if [ -z "$gpu_devices" ]; then
     echo -e "${red}No GPU devices found!${no_color}"
-    exit 1
+    #exit 1
 fi
 
 echo -e "${green}Found GPU devices:${no_color}"
@@ -416,8 +418,6 @@ CHECK_SCRIPT_EOF
 sudo chmod +x "$CHECK_SCRIPT"
 echo -e "${green}Created IOMMU groups checker script at $CHECK_SCRIPT${no_color}"
 
-login_manager="sddm"
-
 SWITCH_SCRIPT="/usr/local/bin/gpu-switch.sh"
 echo -e "${green}Creating GPU switch script at $SWITCH_SCRIPT${no_color}"
 
@@ -433,7 +433,7 @@ case "$GPU_TYPE" in
         ;;
     *)
         echo -e "${red}No supported GPU driver detected for switching${no_color}"
-        exit 1
+        #exit 1
         ;;
 esac
 

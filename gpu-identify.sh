@@ -24,7 +24,7 @@ backup_file() {
     fi
 }
 
-echo -e "${green}Starting IOMMU setup for KVM virtualization...${no_color}"
+echo -e "${green}Starting IOMMU setup for KVM virtualization, And GPU Passthrough...${no_color}"
 
 echo -e "${green}Checking CPU vendor and IOMMU support...${no_color}"
 CPU_VENDOR=$(lscpu | grep "Vendor ID" | awk '{print $3}')
@@ -51,56 +51,6 @@ if sudo dmesg | grep -q "IOMMU enabled"; then
 else
     echo -e "${green}IOMMU not currently enabled${no_color}"
 fi
-
-echo -e "${green}Detecting bootloader...${no_color}"
-detect_bootloader() {
-    # Check for GRUB first (most common)
-    if [[ -f "/boot/grub/grub.cfg" ]] || [[ -f "/etc/default/grub" ]] || sudo test -d "/boot/grub"; then
-        echo -e "${green}GRUB bootloader detected${no_color}"
-        return 1 # GRUB detected
-    fi
-    
-    local entries_dir=""
-    local systemd_boot_detected=false
-    local esp_path=""
-    
-    # Check for systemd-boot in multiple possible locations
-    local possible_locations=(
-        "/boot/loader/entries"
-        "/boot/efi/loader/entries"
-        "/efi/loader/entries"
-        "/boot/EFI/loader/entries"
-    )
-    
-    for path in "${possible_locations[@]}"; do
-        if sudo test -d "$path" && sudo test -f "${path%/entries}/loader.conf"; then
-            echo -e "${green}systemd-boot detected at $path${no_color}"
-            systemd_boot_detected=true
-            entries_dir="$path"
-            break
-        fi
-    done
-
-    # Fallback to bootctl if still not detected
-    if [[ "$systemd_boot_detected" == false ]] && command -v bootctl &>/dev/null; then
-        if bootctl status &>/dev/null; then
-            esp_path=$(bootctl status 2>/dev/null | awk -F': ' '/ESP:/ {print $2}')
-            if [[ -n "$esp_path" ]]; then
-                entries_dir="$esp_path/loader/entries"
-                if sudo test -d "$entries_dir"; then
-                    echo -e "${green}systemd-boot detected via bootctl at $entries_dir${no_color}"
-                    systemd_boot_detected=true
-                fi
-            fi
-        fi
-    fi
-
-    if [[ "$systemd_boot_detected" == true ]]; then
-        return 0  # systemd-boot detected
-    else
-        return 2  # No bootloader detected
-    fi
-}
 
 echo -e "${green}=== GPU PCI ID Identifier for VFIO Passthrough ===${no_color}"
 echo ""
@@ -244,18 +194,32 @@ if [ -n "$amd_gpu" ]; then
     GPU_PCI_ID="$amd_pci_addr"
 fi
 
-detect_bootloader
-detection_result=$?
+echo -e "${green}\nAdding $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS to the bootloader\n${no_color}"
+
+echo -e "${green}Detecting bootloader...${no_color}"
+bootloader_type=2
+echo -e "${green}check for systemd-boot first${no_color}"
+if bootctl status 2>/dev/null | grep -q "systemd-boot"; then
+    echo -e "${green}systemd-boot confirmed via bootctl${no_color}"
+    bootloader_type=0
+fi
+if (( bootloader_type == 2 )); then
+    echo -e "${green}check for Grub bootloader${no_color}"
+    if [[ -f "/boot/grub/grub.cfg" ]] || sudo test -d "/boot/grub"; then
+        echo -e "${green}GRUB bootloader detected${no_color}"
+        bootloader_type=1 # GRUB detected
+    fi
+fi
 
 if [ -n "$VFIO_IDS" ]; then
-    case $detection_result in
+    case "$bootloader_type" in
         0)
             # systemd-boot detected
             echo -e "${green}Configuring systemd-boot...${no_color}"
             
             # Find the correct entries directory
-            local entries_dir=""
-            for path in "/boot/efi/loader/entries" "/boot/loader/entries" "/efi/loader/entries"; do
+            entries_dir=""
+            for path in "/boot/efi/loader/entries" "/boot/loader/entries" "/efi/loader/entries" "/boot/EFI/loader/entries"; do
                 echo -e "${blue}Checking path: $path${no_color}"
                 if sudo test -d "$path"; then
                     entries_dir="$path"
@@ -270,13 +234,13 @@ if [ -n "$VFIO_IDS" ]; then
                 
                 # Try to get boot entries using bootctl
                 if command -v bootctl &> /dev/null; then
-                    local bootctl_output=$(bootctl list 2>/dev/null)
+                    bootctl_output=$(bootctl list 2>/dev/null)
                     if [[ -n "$bootctl_output" ]]; then
                         echo -e "${green}Found boot entries via bootctl:${no_color}"
                         echo "$bootctl_output"
                         
                         # Get the ESP path from bootctl
-                        local esp_path=$(bootctl status 2>/dev/null | grep "ESP:" | awk '{print $2}')
+                        esp_path=$(bootctl status 2>/dev/null | grep "ESP:" | awk '{print $2}')
                         if [[ -n "$esp_path" ]]; then
                             entries_dir="$esp_path/loader/entries"
                             echo -e "${green}Using ESP path: $entries_dir${no_color}"
@@ -292,7 +256,7 @@ if [ -n "$VFIO_IDS" ]; then
             fi
             
             # Find boot entries
-            local boot_entries=($(sudo find "$entries_dir" -name "*.conf" 2>/dev/null))
+            boot_entries=($(sudo find "$entries_dir" -name "*.conf" 2>/dev/null))
             
             if [[ ${#boot_entries[@]} -eq 0 ]]; then
                 echo -e "${red}No boot entries found in $entries_dir${no_color}"
@@ -416,7 +380,7 @@ echo -e "${green}sudo journalctl -f${no_color}"
 CHECK_SCRIPT_EOF
 
 sudo chmod +x "$CHECK_SCRIPT"
-echo -e "${green}Created IOMMU groups checker script at $CHECK_SCRIPT${no_color}"
+echo ""
 
 SWITCH_SCRIPT="/usr/local/bin/gpu-switch.sh"
 echo -e "${green}Creating GPU switch script at $SWITCH_SCRIPT${no_color}"
@@ -569,7 +533,6 @@ esac
 SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
-echo -e "${green}Created GPU switch script at $SWITCH_SCRIPT${no_color}"
 
 echo ""
 # Load vfio modules
@@ -656,6 +619,8 @@ fi
 
 echo ""
 LIBVIRTHOOK_SCRIPT="/etc/libvirt/hooks/qemu"
+echo -e "${green}creating LIBVIRTHOOK_SCRIPT to automate the switch binding for GPU at $LIBVIRTHOOK_SCRIPT${no_color}"
+sudo mkdir -p "/etc/libvirt/hooks" || true
 echo -e "${green}Create libvirt hook to automate GPU switching, at $LIBVIRTHOOK_SCRIPT${no_color}"
 
 cat << LIBVIRTHOOK_SCRIPT_EOF | sudo tee "$LIBVIRTHOOK_SCRIPT" > /dev/null
@@ -681,6 +646,8 @@ fi
 LIBVIRTHOOK_SCRIPT_EOF
 sudo chmod +x $LIBVIRTHOOK_SCRIPT
 sudo systemctl restart libvirtd || true
+
+echo ""
 
 #TODO: the bottom line.
 echo -e "${green}Make sure to change the guest name in the LIBVIRTHOOK_SCRIPT so your vm name ${no_color}"

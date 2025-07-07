@@ -133,15 +133,11 @@ echo ""
 echo -e "${green}Categorizing GPUs...${no_color}"
 echo ""
 
-intel_gpu=""
 nvidia_gpu=""
 amd_gpu=""
 
 while IFS= read -r line; do
-    if [[ $line == *"Intel"* ]]; then
-        intel_gpu="$line"
-        echo -e "${green}Intel iGPU:${no_color} $line"
-    elif [[ $line == *"NVIDIA"* ]]; then
+    if [[ $line == *"NVIDIA"* ]]; then
         nvidia_gpu="$line"
         echo -e "${green}NVIDIA dGPU:${no_color} $line"
     elif [[ $line == *"AMD"* ]] || [[ $line == *"Advanced Micro Devices"* ]]; then
@@ -610,7 +606,6 @@ else
     fi
 
     echo -e "${green}VFIO modules configuration completed${no_color}"
-    echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 
 fi
 
@@ -660,5 +655,6 @@ sudo chmod +x $LIBVIRTHOOK_SCRIPT
 sudo systemctl restart libvirtd || true
 
 #TODO: the bottom line.
+echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"
 echo ""

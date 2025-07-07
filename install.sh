@@ -106,6 +106,7 @@ sudo pacman -S --needed --noconfirm less # Pager program for viewing text files
 sudo pacman -S --needed --noconfirm mpv # video player
 sudo pacman -S --needed --noconfirm celluloid # frontend for mpv
 sudo pacman -S --needed --noconfirm imv # image viewer
+sudo pacman -S --needed --noconfirm file-roller # Handling archive files
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome || true # Web browser

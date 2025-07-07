@@ -52,48 +52,47 @@ fi
 
 echo -e "${green}Detecting bootloader...${no_color}"
 detect_bootloader() {
+    # Check for GRUB first (most common)
+    if [[ -f "/boot/grub/grub.cfg" ]] || [[ -f "/etc/default/grub" ]] || sudo test -d "/boot/grub"; then
+        echo -e "${green}GRUB bootloader detected${no_color}"
+        return 1 # GRUB detected
+    fi
+    
     local entries_dir=""
     local systemd_boot_detected=false
-    local bootctl_output
-    local esp_path
-    local boot_entries
-    
-    # Check for GRUB first
-    if [[ -f "/boot/grub/grub.cfg" ]] || sudo test -d "/boot/grub"; then
-        echo -e "${green}GRUB bootloader detected${no_color}"
-        return 1  # GRUB detected
-    fi
+    local esp_path=""
     
     # Check for systemd-boot in multiple possible locations
-    # Check common systemd-boot paths
-    if [[ -f "/boot/loader/loader.conf" ]] || sudo test -d "/boot/loader/entries"; then
-        echo -e "${green}systemd-boot detected at /boot/loader/${no_color}"
-        systemd_boot_detected=true
-    elif [[ -f "/boot/efi/loader/loader.conf" ]] || sudo test -d "/boot/efi/loader/entries"; then
-        echo -e "${green}systemd-boot detected at /boot/efi/loader/${no_color}"
-        systemd_boot_detected=true
-    elif [[ -f "/efi/loader/loader.conf" ]] || sudo test -d "/efi/loader/entries"; then
-        echo -e "${green}systemd-boot detected at /efi/loader/${no_color}"
-        systemd_boot_detected=true
-    fi
+    local possible_locations=(
+        "/boot/loader/entries"
+        "/boot/efi/loader/entries"
+        "/efi/loader/entries"
+        "/boot/EFI/loader/entries"
+    )
     
-    # Additional checks for systemd-boot
-    if [[ "$systemd_boot_detected" == false ]]; then
-        # Check if bootctl is available and can list entries
-        if command -v bootctl &> /dev/null; then
-            if bootctl list &>/dev/null; then
-                echo -e "${green}systemd-boot detected via bootctl${no_color}"
-                systemd_boot_detected=true
+    for path in "${possible_locations[@]}"; do
+        if sudo test -d "$path" && sudo test -f "${path%/entries}/loader.conf"; then
+            echo -e "${green}systemd-boot detected at $path${no_color}"
+            systemd_boot_detected=true
+            entries_dir="$path"
+            break
+        fi
+    done
+
+    # Fallback to bootctl if still not detected
+    if [[ "$systemd_boot_detected" == false ]] && command -v bootctl &>/dev/null; then
+        if bootctl status &>/dev/null; then
+            esp_path=$(bootctl status 2>/dev/null | awk -F': ' '/ESP:/ {print $2}')
+            if [[ -n "$esp_path" ]]; then
+                entries_dir="$esp_path/loader/entries"
+                if sudo test -d "$entries_dir"; then
+                    echo -e "${green}systemd-boot detected via bootctl at $entries_dir${no_color}"
+                    systemd_boot_detected=true
+                fi
             fi
         fi
-        
-        # Check for ESP mount point
-        if findmnt -t vfat /boot &>/dev/null || findmnt -t vfat /boot/efi &>/dev/null || findmnt -t vfat /efi &>/dev/null; then
-            echo -e "${green}EFI System Partition found, likely systemd-boot${no_color}"
-            systemd_boot_detected=true
-        fi
     fi
-    
+
     if [[ "$systemd_boot_detected" == true ]]; then
         return 0  # systemd-boot detected
     else
@@ -448,6 +447,17 @@ yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # No Color
 
+# Delay function with progress indicator
+delay_with_progress() {
+    local secs=\$1
+    echo -n -e "\${blue}Waiting \$secs seconds "
+    for ((i=0; i<secs; i++)); do
+        echo -n "."
+        sleep 1
+    done
+    echo -e "\${no_color}"
+}
+
 # GPU Switch Script for VFIO Passthrough
 # Switches GPU between host and VM
 
@@ -460,15 +470,25 @@ LOGIN_MANAGER="$login_manager"
 case "\$1" in
     "vm")
         echo -e "\${green}Switching GPU to VM mode...\${no_color}"
-        # Stop display manager
-        if ! sudo systemctl stop "\$LOGIN_MANAGER"; then
-            echo -e "\${red}Failed to stop display manager\${no_color}"
-            exit 1
+        
+        # Stop display manager with timeout
+        if systemctl is-active --quiet "\$LOGIN_MANAGER"; then
+            echo -e "\${blue}Stopping display manager...\${no_color}"
+            if ! sudo systemctl stop "\$LOGIN_MANAGER"; then
+                echo -e "\${red}Failed to stop display manager\${no_color}"
+                exit 1
+            fi
+            delay_with_progress 3  # Allow services to settle
         fi
         
-        # Unload host GPU drivers
-        sudo modprobe -r \$GPU_DRIVER 2>/dev/null || true
-        sudo modprobe -r nvidia_drm nvidia_modeset nvidia_uvm 2>/dev/null || true
+        # Unload host GPU drivers with checks
+        echo -e "\${blue}Unloading host drivers...\${no_color}"
+        for module in \$GPU_DRIVER nvidia_drm nvidia_modeset nvidia_uvm; do
+            if lsmod | grep -q "\$module"; then
+                sudo modprobe -r "\$module" 2>/dev/null || true
+            fi
+        done
+        delay_with_progress 2
         
         # Unbind devices from host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
@@ -511,11 +531,17 @@ case "\$1" in
             echo "" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver_override 2>/dev/null || true
         fi
         
-        # Load host GPU driver
+        # Load host GPU driver with retry
+        echo -e "\${blue}Loading host driver...\${no_color}"
         if ! sudo modprobe \$GPU_DRIVER; then
-            echo -e "\${red}Failed to load \$GPU_DRIVER\${no_color}"
-            exit 1
+            echo -e "\${yellow}First attempt failed, retrying...\${no_color}"
+            delay_with_progress 2
+            if ! sudo modprobe \$GPU_DRIVER; then
+                echo -e "\${red}Failed to load \$GPU_DRIVER\${no_color}"
+                exit 1
+            fi
         fi
+        delay_with_progress 2
         
         # Bind to host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
@@ -550,7 +576,8 @@ echo ""
 echo -e "${green}Loading VFIO kernel modules...${no_color}"
 MODULES_LOAD_CONF="/etc/modules-load.d/vfio.conf"
 if [[ ! -f "$MODULES_LOAD_CONF" ]]; then
-    echo -e "vfio\nvfio_iommu_type1\nvfio_pci\nvfio_virqfd" | sudo tee "$MODULES_LOAD_CONF" > /dev/null
+    # TODO: add vfio_virqfd module
+    echo -e "vfio\nvfio_iommu_type1\nvfio_pci" | sudo tee "$MODULES_LOAD_CONF" > /dev/null
     echo -e "${green}Created $MODULES_LOAD_CONF with VFIO modules${no_color}"
 else
     echo -e "${yellow}VFIO modules configuration already exists${no_color}"
@@ -561,7 +588,8 @@ echo -e "${green}Update initramfs to include VFIO modules:${no_color}"
 # Configuration file
 MKINITCPIO_CONF="/etc/mkinitcpio.conf"
 # VFIO modules to add
-VFIO_MODULES="vfio vfio_iommu_type1 vfio_virqfd vfio_pci"
+# TODO: add vfio_virqfd module
+VFIO_MODULES="vfio vfio_iommu_type1 vfio_pci"
 
 echo -e "${green}Starting VFIO modules configuration for $MKINITCPIO_CONF...${no_color}"
 
@@ -655,6 +683,7 @@ sudo chmod +x $LIBVIRTHOOK_SCRIPT
 sudo systemctl restart libvirtd || true
 
 #TODO: the bottom line.
+echo -e "${green}Make sure to change the guest name in the LIBVIRTHOOK_SCRIPT so your vm name ${no_color}"
 echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"
 echo ""

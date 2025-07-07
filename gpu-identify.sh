@@ -611,7 +611,7 @@ fi
 
 # Update initramfs
 echo -e "${green}Updating initramfs...${no_color}"
-if sudo mkinitcpio -P; then
+if sudo mkinitcpio -P; then  # Run 'update-initramfs -u' for debian based distro and Run 'kernelstub' if you are on popos
     echo -e "${green}Initramfs updated successfully${no_color}"
 else
     echo -e "${red}Failed to update initramfs${no_color}"
@@ -645,11 +645,12 @@ fi
 
 LIBVIRTHOOK_SCRIPT_EOF
 sudo chmod +x $LIBVIRTHOOK_SCRIPT
-sudo systemctl restart libvirtd || true
+#sudo systemctl restart libvirtd || true
 
 echo ""
 
 #TODO: the bottom line.
+echo -e "${green}IOMMU and GPU passthrough setup completed${no_color}"
 echo -e "${green}Make sure to change the guest name in the LIBVIRTHOOK_SCRIPT so your vm name ${no_color}"
 echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"

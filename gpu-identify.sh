@@ -654,9 +654,9 @@ sudo systemctl restart libvirtd || true
 
 echo ""
 
-#TODO: the bottom line.
 echo -e "${green}IOMMU and GPU passthrough setup completed${no_color}"
-echo -e "${yellow}Make sure to change the guest name in the LIBVIRTHOOK_SCRIPT so your vm name ${no_color}"
+echo -e "${yellow}Make sure to change the guest name in the $LIBVIRTHOOK_SCRIPT so your vm name ${no_color}"
 echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
+#TODO: the bottom line.
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"
 echo ""

@@ -660,3 +660,7 @@ echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 #TODO: the bottom line.
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"
 echo ""
+echo -e "${green}Scripts summary : ${no_color}"
+echo -e "${green}$CHECK_SCRIPT Use to check IOMMU groups after reboot${no_color}"
+echo -e "${green}$SWITCH_SCRIPT To switch GPU between host and vm${no_color}"
+echo -e "${green}$LIBVIRTHOOK_SCRIPT libvirt hook that automatically run the switch script${no_color}"

@@ -16,7 +16,7 @@ no_color='\033[0m' # No Color
 # Function to create backup files
 backup_file() {
     local file="$1"
-    if [[ -f "$file" ]]; then
+    if sudo test -f "$file"; then
         sudo cp "$file" "$file.backup.$(date +%Y%m%d_%H%M%S)"
         echo -e "${green}Backed up $file${no_color}"
     else
@@ -637,7 +637,7 @@ yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # No Color
 
-GUEST_NAME="your-vm-name"
+GUEST_NAME="10-win11" # your-vm-name
 COMMAND="\$1"
 EVENT="\$2"
 if [ "\$COMMAND" = "\$GUEST_NAME" ]; then

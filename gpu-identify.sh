@@ -4,7 +4,7 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
-login_manager="sddm"
+login_manager="ly"
 
 # Colors for better readability
 red='\033[0;31m'
@@ -506,7 +506,12 @@ case "\$1" in
             fi
         fi
         delay_with_progress 2
-        
+        # Load nvidia open source drivers nvidia_drm nvidia_modeset nvidia_uvm
+        sudo modprobe nouveau || true
+        sudo modprobe nvidia-drm modeset=1 || true
+        sudo modprobe nvidia_modeset || true
+        sudo modprobe nvidia_uvm || true
+
         # Bind to host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$GPU_DRIVER/bind 2>/dev/null || true

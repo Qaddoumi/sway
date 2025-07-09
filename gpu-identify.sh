@@ -4,7 +4,7 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
-login_manager="ly"
+login_manager="sddm"
 
 # Colors for better readability
 red='\033[0;31m'

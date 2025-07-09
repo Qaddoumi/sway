@@ -452,7 +452,7 @@ case "\$1" in
                 sudo modprobe -r "\$module" 2>/dev/null || true
             fi
         done
-        delay_with_progress 2
+        delay_with_progress 5
         
         # Unbind devices from host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
@@ -497,16 +497,11 @@ case "\$1" in
         
         # Load host GPU driver with retry
         echo -e "\${blue}Loading host driver...\${no_color}"
-        if ! sudo modprobe \$GPU_DRIVER; then
-            echo -e "\${yellow}First attempt failed, retrying...\${no_color}"
-            delay_with_progress 2
-            if ! sudo modprobe \$GPU_DRIVER; then
-                echo -e "\${red}Failed to load \$GPU_DRIVER\${no_color}"
-                exit 1
-            fi
-        fi
-        delay_with_progress 2
         # Load nvidia open source drivers nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight
+        sudo modprobe \$GPU_DRIVER || true
+        delay_with_progress 2
+        sudo modprobe \$GPU_DRIVER || true
+        sudo modprobe \$AUDIO_DRIVER || true
         sudo modprobe nouveau || true
         sudo modprobe nvidia-drm modeset=1 || true
         sudo modprobe nvidia_modeset || true

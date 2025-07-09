@@ -30,14 +30,18 @@ echo -e "${green}Checking CPU vendor and IOMMU support...${no_color}"
 CPU_VENDOR=$(lscpu | grep "Vendor ID" | awk '{print $3}')
 echo -e "${green}CPU Vendor: $CPU_VENDOR${no_color}"
 
+# Integrated gpu modeset
+integrated_gpu_modeset=""
 # Determine IOMMU parameter based on CPU vendor
 echo -e "${green}Determining IOMMU parameter based on CPU vendor${no_color}"
 if [[ "$CPU_VENDOR" == "GenuineIntel" ]]; then
     IOMMU_PARAM="intel_iommu=on"
-    echo -e "${green}Intel CPU detected - will use intel_iommu=on${no_color}"
+    integrated_gpu_modeset="i915.modeset=1"
+    echo -e "${green}Intel CPU detected - will use intel_iommu=on $integrated_gpu_modeset${no_color}"
 elif [[ "$CPU_VENDOR" == "AuthenticAMD" ]]; then
     IOMMU_PARAM="amd_iommu=on"
-    echo -e "${green}AMD CPU detected - will use amd_iommu=on${no_color}"
+    integrated_gpu_modeset="amdgpu.modeset=1"
+    echo -e "${green}AMD CPU detected - will use amd_iommu=on $integrated_gpu_modeset${no_color}"
 else
     echo -e "${red}Unknown CPU vendor: $CPU_VENDOR${no_color}"
     echo -e "${red}Please manually add the appropriate IOMMU parameter for your CPU${no_color}"
@@ -281,12 +285,12 @@ if [ -n "$VFIO_IDS" ]; then
                 
                 # Add IOMMU parameter to the options line
                 if sudo grep -q "^options" "$entry"; then
-                    sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS/" "$entry"
-                    echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS${no_color}"
+                    sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset/" "$entry"
+                    echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
                 else
                     # If no options line exists, add one
-                    echo "options $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS" | sudo tee -a "$entry" > /dev/null
-                    echo -e "${green}Added options line to $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS${no_color}"
+                    echo "options $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset" | sudo tee -a "$entry" > /dev/null
+                    echo -e "${green}Added options line to $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
                 fi
             done
             ;;
@@ -307,8 +311,8 @@ if [ -n "$VFIO_IDS" ]; then
                 echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
             else
                 # Add IOMMU parameter to GRUB_CMDLINE_LINUX_DEFAULT
-                sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS\"/" "$GRUB_CONFIG"
-                echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS${no_color}"
+                sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset\"/" "$GRUB_CONFIG"
+                echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
             fi
 
             # Regenerate GRUB configuration
@@ -447,13 +451,17 @@ case "\$1" in
         
         # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
-        for module in \$GPU_DRIVER nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight; do
+        for module in \$GPU_DRIVER nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
             if lsmod | grep -q "\$module"; then
                 sudo modprobe -r "\$module" 2>/dev/null || true
             fi
         done
         delay_with_progress 5
-        
+
+        # Load the integrated gpu
+        sudo modprobe i915 || true # For Intel integrated GPU
+        sudo modprobe amdgpu || true  # For AMD integrated GPU
+
         # Unbind devices from host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
@@ -494,19 +502,12 @@ case "\$1" in
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
             echo "" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver_override 2>/dev/null || true
         fi
-        
-        # Load host GPU driver with retry
-        echo -e "\${blue}Loading host driver...\${no_color}"
-        # Load nvidia open source drivers nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight
-        sudo modprobe \$GPU_DRIVER || true
-        delay_with_progress 2
-        sudo modprobe \$GPU_DRIVER || true
-        sudo modprobe \$AUDIO_DRIVER || true
-        sudo modprobe nouveau || true
-        sudo modprobe nvidia-drm modeset=1 || true
-        sudo modprobe nvidia_modeset || true
-        sudo modprobe nvidia_uvm || true
-        sudo modprobe nvidia_wmi_ec_backlight || true
+
+        # load host GPU drivers with checks
+        echo -e "\${blue}loading host drivers...\${no_color}"
+        for module in \$GPU_DRIVER nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
+            sudo modprobe "\$module" 2>/dev/null || true
+        done
 
         # Bind to host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then

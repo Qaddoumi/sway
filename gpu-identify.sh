@@ -222,6 +222,7 @@ if [ -n "$VFIO_IDS" ]; then
             echo -e "${green}Configuring systemd-boot...${no_color}"
             
             # Find the correct entries directory
+            # You can run 'sudo bootctl list' to find them
             entries_dir=""
             for path in "/boot/efi/loader/entries" "/boot/loader/entries" "/efi/loader/entries" "/boot/EFI/loader/entries"; do
                 echo -e "${blue}Checking path: $path${no_color}"

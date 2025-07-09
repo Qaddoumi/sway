@@ -39,6 +39,7 @@ if [[ "$CPU_VENDOR" == "GenuineIntel" ]]; then
     integrated_gpu_modeset="i915.modeset=1"
     echo -e "${green}Intel CPU detected - will use intel_iommu=on $integrated_gpu_modeset${no_color}"
 elif [[ "$CPU_VENDOR" == "AuthenticAMD" ]]; then
+    echo -e "${red}This script does not handle amd inegrated gpu with amd discrete gpe probebly${no_color}"
     IOMMU_PARAM="amd_iommu=on"
     integrated_gpu_modeset="amdgpu.modeset=1"
     echo -e "${green}AMD CPU detected - will use amd_iommu=on $integrated_gpu_modeset${no_color}"

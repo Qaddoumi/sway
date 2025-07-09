@@ -447,7 +447,7 @@ case "\$1" in
         
         # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
-        for module in \$GPU_DRIVER nvidia_drm nvidia_modeset nvidia_uvm; do
+        for module in \$GPU_DRIVER nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight; do
             if lsmod | grep -q "\$module"; then
                 sudo modprobe -r "\$module" 2>/dev/null || true
             fi
@@ -506,11 +506,12 @@ case "\$1" in
             fi
         fi
         delay_with_progress 2
-        # Load nvidia open source drivers nvidia_drm nvidia_modeset nvidia_uvm
+        # Load nvidia open source drivers nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight
         sudo modprobe nouveau || true
         sudo modprobe nvidia-drm modeset=1 || true
         sudo modprobe nvidia_modeset || true
         sudo modprobe nvidia_uvm || true
+        sudo modprobe nvidia_wmi_ec_backlight || true
 
         # Bind to host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
@@ -609,7 +610,7 @@ echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_co
 echo "   Create /etc/modprobe.d/vfio.conf"
 
 if [ "$GPU_TYPE" = "nvidia" ]; then
-    echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau" | sudo tee /etc/modprobe.d/vfio.conf
+    echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau\nblacklist nvidia_uvm\nblacklist nvidia_wmi_ec_backlight" | sudo tee /etc/modprobe.d/vfio.conf
 elif [ "$GPU_TYPE" = "amdgpu" ]; then
     echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/vfio.conf
 fi

@@ -53,8 +53,7 @@ is_gpu_device() {
     fi
 }
 
-# Test function
-test_vm_detection() {
+is_gpu_passed_to_vm() {
     local vm_name="$1"
     
     if [ -z "$vm_name" ]; then
@@ -63,33 +62,34 @@ test_vm_detection() {
         sudo virsh list --all --name
         return 1
     fi
-    
+
     echo -e "${green}Testing VM: $vm_name${no_color}"
     echo ""
-    
-    echo -e "${yellow}Method (xmllint):${no_color}"
+
+    echo -e "${yellow}Using (xmllint) to check if the gpu is passed to vm:${no_color}"
     if command -v xmllint &> /dev/null; then
         pci_devices_xmllint=$(get_vm_pci_devices_xmllint "$vm_name")
         if [ -n "$pci_devices_xmllint" ]; then
             echo "$pci_devices_xmllint"
             while IFS= read -r pci_device; do
                 if [ -n "$pci_device" ]; then
-                    is_gpu_device "$pci_device"
+                    if is_gpu_device "$pci_device"; then
+                        return 0
+                    fi
                 fi
             done <<< "$pci_devices_xmllint"
         else
             echo "No PCI devices found"
+            return 1
         fi
     else
-        echo "xmllint not available"
+        echo "xmllint not available, can't run the script"
     fi
+    return 1
 }
 
 # Main execution
-is_gpu_passed_to_vm=$(test_vm_detection "\$COMMAND")
-echo "is_gpu_passed_to_vm: $is_gpu_passed_to_vm"
-
-if [ "$is_gpu_passed_to_vm" = "0" ]; then
+if is_gpu_passed_to_vm "\$COMMAND"; then
     echo "GPU is passed to VM"
     if [ "\$EVENT" = "prepare" ]; then
         $SWITCH_SCRIPT vm

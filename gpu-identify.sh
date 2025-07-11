@@ -4,7 +4,8 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
-login_manager="sddm"
+# login_manager="${1:-sddm}"
+username="${2:-$USER}"
 
 # Colors for better readability
 red='\033[0;31m'
@@ -435,22 +436,22 @@ GPU_PCI_ID="$GPU_PCI_ID"
 AUDIO_PCI_ID="$AUDIO_PCI_ID"
 GPU_DRIVER="$GPU_DRIVER"
 AUDIO_DRIVER="$AUDIO_DRIVER"
-LOGIN_MANAGER="$login_manager"
+# LOGIN_MANAGER="$login_manager"
 
 case "\$1" in
     "vm")
         echo -e "\${green}Switching GPU to VM mode...\${no_color}"
-        
-        # Stop display manager with timeout
-        if systemctl is-active --quiet "\$LOGIN_MANAGER"; then
-            echo -e "\${blue}Stopping display manager...\${no_color}"
-            if ! sudo systemctl stop "\$LOGIN_MANAGER"; then
-                echo -e "\${red}Failed to stop display manager\${no_color}"
-                exit 1
-            fi
-            delay_with_progress 3  # Allow services to settle
-        fi
-        
+
+        # # Stop display manager with timeout
+        # if systemctl is-active --quiet "\$LOGIN_MANAGER"; then
+        #     echo -e "\${blue}Stopping display manager...\${no_color}"
+        #     if ! sudo systemctl stop "\$LOGIN_MANAGER"; then
+        #         echo -e "\${red}Failed to stop display manager\${no_color}"
+        #         exit 1
+        #     fi
+        #     delay_with_progress 3  # Allow services to settle
+        # fi
+
         # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
         for module in \$GPU_DRIVER nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
@@ -484,7 +485,10 @@ case "\$1" in
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         fi
-        
+
+        echo -e "reload sway config"
+        swaymsg reload
+
         echo -e "\${green}GPU switched to VM mode\${no_color}"
         ;;
     "host")
@@ -496,7 +500,7 @@ case "\$1" in
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
         fi
-        
+
         # Clear driver overrides
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
             echo "" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver_override 2>/dev/null || true
@@ -518,13 +522,16 @@ case "\$1" in
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$AUDIO_DRIVER/bind 2>/dev/null || true
         fi
-        
-        # Restart display manager
-        if ! sudo systemctl start "\$LOGIN_MANAGER"; then
-            echo -e "\${red}Failed to start display manager\${no_color}"
-            exit 1
-        fi
-        
+
+        # # Restart display manager
+        # if ! sudo systemctl start "\$LOGIN_MANAGER"; then
+        #     echo -e "\${red}Failed to start display manager\${no_color}"
+        #     exit 1
+        # fi
+
+        echo -e "reload sway config"
+        swaymsg reload
+
         echo -e "\${green}GPU switched to host mode\${no_color}"
         ;;
     *)
@@ -537,6 +544,10 @@ esac
 SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
+echo -e "${green}Making the switch script runs without password${no_color}"
+if ! grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /mnt/etc/sudoers; then
+    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" >> /mnt/etc/sudoers || warn "Failed to configure sudo"
+fi
 
 echo ""
 # Load vfio modules
@@ -615,7 +626,7 @@ fi
 
 # Update initramfs
 echo -e "${green}Updating initramfs...${no_color}"
-if sudo mkinitcpio -P; then  # Run 'update-initramfs -u' for debian based distro and Run 'kernelstub' if you are on popos
+if sudo mkinitcpio -P; then  # Note: Run 'update-initramfs -u' for debian based distro and Run 'kernelstub' if you are on popos
     echo -e "${green}Initramfs updated successfully${no_color}"
 else
     echo -e "${red}Failed to update initramfs${no_color}"

@@ -21,4 +21,3 @@ bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/installconf
 
 ## Credit
 - [arkboix/sway](https://github.com/arkboix/sway)
-- [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme)

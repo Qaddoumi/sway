@@ -32,13 +32,27 @@ backup_file() {
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
-# Accept login_manager as a command-line argument, default to "sddm" if not provided
-login_manager="${1:-sddm}"
-if [[ $# -ge 1 ]]; then
-    echo -e "${green}Login manager argument provided: $login_manager${no_color}"
-else
-    echo -e "${yellow}No login manager argument provided. Using default: $login_manager${no_color}"
-fi
+# Parse named arguments --login-manager and --username
+login_manager="sddm"  # default
+username="$USER"      # default
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --login-manager)
+            login_manager="$2"
+            shift 2
+            ;;
+        --username)
+            username="$2"
+            shift 2
+            ;;
+        *)
+            echo -e "${red}Unknown argument: $1${no_color}"
+            exit 1
+            ;;
+    esac
+done
+echo -e "${green}Login manager to be used: $login_manager${no_color}"
+echo -e "${green}Username to be used     : $username${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
@@ -107,6 +121,7 @@ sudo pacman -S --needed --noconfirm mpv # video player
 sudo pacman -S --needed --noconfirm celluloid # frontend for mpv
 sudo pacman -S --needed --noconfirm imv # image viewer
 sudo pacman -S --needed --noconfirm file-roller # Handling archive files
+sudo pacman -S --needed --noconfirm libxml2 # XML parsing library
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome || true # Web browser

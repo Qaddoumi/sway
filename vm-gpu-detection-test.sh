@@ -37,22 +37,6 @@ get_vm_pci_devices_xmllint() {
     done
 }
 
-# Function to check if a PCI device is a GPU
-is_gpu_device() {
-    local pci_id="$1"
-    # Convert format from domain:bus:slot.function to bus:slot.function
-    local pci_addr=$(echo "$pci_id" | sed 's/^0000://')
-    
-    # Check if this PCI device is a VGA controller or 3D controller
-    if lspci -s "$pci_addr" 2>/dev/null | grep -qE "(VGA|3D controller)"; then
-        echo -e "${green}GPU found: $pci_addr${no_color}"
-        return 0
-    else
-        echo -e "${blue}Not a GPU: $pci_addr${no_color}"
-        return 1
-    fi
-}
-
 is_gpu_passed_to_vm() {
     local vm_name="$1"
     
@@ -73,8 +57,13 @@ is_gpu_passed_to_vm() {
             echo "$pci_devices_xmllint"
             while IFS= read -r pci_device; do
                 if [ -n "$pci_device" ]; then
-                    if is_gpu_device "$pci_device"; then
+                    local pci_addr=$(echo "$pci_device" | sed 's/^0000://')
+                    # Check if this PCI device is a VGA controller or 3D controller
+                    if lspci -s "$pci_addr" 2>/dev/null | grep -qE "(VGA|3D controller)"; then
+                        echo -e "${green}GPU found: $pci_addr${no_color}"
                         return 0
+                    else
+                        echo -e "${blue}Not a GPU: $pci_addr${no_color}"
                     fi
                 fi
             done <<< "$pci_devices_xmllint"

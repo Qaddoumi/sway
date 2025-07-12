@@ -544,10 +544,10 @@ esac
 SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
-echo -e "${green}Making the switch script runs without password${no_color}"
-if ! sudo grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
-    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" | sudo tee -a /etc/sudoers > /dev/null
-fi
+# echo -e "${green}Making the switch script runs without password${no_color}"
+# if ! sudo grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
+#     echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" | sudo tee -a /etc/sudoers > /dev/null
+# fi
 
 echo ""
 # Load vfio modules
@@ -615,14 +615,14 @@ else
 
 fi
 
-echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_color}"
-echo "   Create /etc/modprobe.d/vfio.conf"
+# echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_color}"
+# echo "   Create /etc/modprobe.d/vfio.conf"
 
-if [ "$GPU_TYPE" = "nvidia" ]; then
-    echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau\nblacklist nvidia_uvm\nblacklist nvidia_wmi_ec_backlight" | sudo tee /etc/modprobe.d/vfio.conf
-elif [ "$GPU_TYPE" = "amdgpu" ]; then
-    echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/vfio.conf
-fi
+# if [ "$GPU_TYPE" = "nvidia" ]; then
+#     echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau\nblacklist nvidia_uvm\nblacklist nvidia_wmi_ec_backlight" | sudo tee /etc/modprobe.d/vfio.conf
+# elif [ "$GPU_TYPE" = "amdgpu" ]; then
+#     echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/vfio.conf
+# fi
 
 # Update initramfs
 echo -e "${green}Updating initramfs...${no_color}"

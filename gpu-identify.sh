@@ -258,7 +258,7 @@ if [ -n "$VFIO_IDS" ]; then
             
             if [[ -z "$entries_dir" ]] || ! sudo test -d "$entries_dir"; then
                 echo -e "${red}Could not locate systemd-boot entries directory${no_color}"
-                echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS' to your boot entry${no_color}"
+                echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset' to your boot entry${no_color}"
                 #exit 1
             fi
             
@@ -454,7 +454,7 @@ case "\$1" in
 
         # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
-        for module in \$GPU_DRIVER nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
+        for module in nvidia nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
             if lsmod | grep -q "\$module"; then
                 sudo modprobe -r "\$module" 2>/dev/null || true
             fi
@@ -486,8 +486,8 @@ case "\$1" in
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         fi
 
-        echo -e "reload sway config"
-        swaymsg reload
+        # echo -e "reload sway config"
+        # swaymsg reload
 
         echo -e "\${green}GPU switched to VM mode\${no_color}"
         ;;
@@ -511,7 +511,7 @@ case "\$1" in
 
         # load host GPU drivers with checks
         echo -e "\${blue}loading host drivers...\${no_color}"
-        for module in \$GPU_DRIVER nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
+        for module in nvidia nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
             sudo modprobe "\$module" 2>/dev/null || true
         done
 
@@ -529,8 +529,8 @@ case "\$1" in
         #     exit 1
         # fi
 
-        echo -e "reload sway config"
-        swaymsg reload
+        # echo -e "reload sway config"
+        # swaymsg reload
 
         echo -e "\${green}GPU switched to host mode\${no_color}"
         ;;
@@ -545,8 +545,8 @@ SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
 echo -e "${green}Making the switch script runs without password${no_color}"
-if ! grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
-    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" >> /etc/sudoers || warn "Failed to configure sudo"
+if ! sudo grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
+    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" | sudo tee -a /etc/sudoers > /dev/null
 fi
 
 echo ""
@@ -646,15 +646,86 @@ yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # No Color
 
-GUEST_NAME="10-win11" # your-vm-name
 COMMAND="\$1"
 EVENT="\$2"
-if [ "\$COMMAND" = "\$GUEST_NAME" ]; then
+
+# Function to extract PCI devices from VM XML using xmllint (more robust)
+get_vm_pci_devices_xmllint() {
+    local vm_name="\$1"
+
+    # Get the VM XML configuration
+    local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null)
+
+    if [ -z "\$vm_xml" ]; then
+        echo -e "\${red}Failed to get XML for VM: \$vm_name\${no_color}" >&2
+        return 1
+    fi
+
+    # Use xmllint to extract PCI hostdev addresses
+    echo "\$vm_xml" | xmllint --xpath "//hostdev[@mode='subsystem' and @type='pci']/source/address/@domain | //hostdev[@mode='subsystem' and @type='pci']/source/address/@bus | //hostdev[@mode='subsystem' and @type='pci']/source/address/@slot | //hostdev[@mode='subsystem' and @type='pci']/source/address/@function" - 2>/dev/null | \
+    sed 's/domain="\([^"]*\)"/\1/g; s/bus="\([^"]*\)"/\1/g; s/slot="\([^"]*\)"/\1/g; s/function="\([^"]*\)"/\1/g' | \
+    paste -d' ' - - - - | \
+    while read -r domain bus slot function; do
+        # Convert hex to decimal and format as PCI address
+        domain_dec=\$(printf "%04x" \$domain)
+        bus_dec=\$(printf "%02x" \$bus)
+        slot_dec=\$(printf "%02x" \$slot)
+        func_dec=\$(printf "%01x" \$function)
+
+        echo -e "\${green}\${domain_dec}:\${bus_dec}:\${slot_dec}.\${func_dec}\${no_color}"
+    done
+}
+
+is_gpu_passed_to_vm() {
+    local vm_name="\$1"
+
+    if [ -z "\$vm_name" ]; then
+        echo -e "\${yellow}Usage: \$0 <vm-name>\${no_color}"
+        echo -e "\${green}Available VMs:\${no_color}"
+        sudo virsh list --all --name
+        return 1
+    fi
+
+    echo -e "\${green}Testing VM: \$vm_name\${no_color}"
+    echo ""
+
+    echo -e "\${green}Using (xmllint) to check if the gpu is passed to vm:\${no_color}"
+    if command -v xmllint &> /dev/null; then
+        pci_devices_xmllint=\$(get_vm_pci_devices_xmllint "\$vm_name")
+        if [ -n "\$pci_devices_xmllint" ]; then
+            echo -e "\${green}\$pci_devices_xmllint\${no_color}"
+            while IFS= read -r pci_device; do
+                if [ -n "\$pci_device" ]; then
+                    local pci_addr=\$(echo "\$pci_device" | sed 's/^0000://')
+                    # Check if this PCI device is a VGA controller or 3D controller
+                    if lspci -s "\$pci_addr" 2>/dev/null | grep -qE "(VGA|3D controller)"; then
+                        echo -e "\${green}GPU found: \$pci_addr\${no_color}"
+                        return 0
+                    else
+                        echo -e "\${yellow}Not a GPU: \$pci_addr\${no_color}"
+                    fi
+                fi
+            done <<< "\$pci_devices_xmllint"
+        else
+            echo -e "\${red}No PCI devices found\${no_color}"
+            return 1
+        fi
+    else
+        echo -e "\${red}xmllint not available, can't run the script\${no_color}"
+    fi
+    return 1
+}
+
+# Main execution
+if is_gpu_passed_to_vm "\$COMMAND"; then
+    echo -e "\${green}GPU is passed to VM\${no_color}"
     if [ "\$EVENT" = "prepare" ]; then
         $SWITCH_SCRIPT vm
     elif [ "\$EVENT" = "release" ]; then
         $SWITCH_SCRIPT host
     fi
+else
+    echo -e "\${red}GPU is not passed to VM, Or something happen during the process!!\${no_color}"
 fi
 
 LIBVIRTHOOK_SCRIPT_EOF

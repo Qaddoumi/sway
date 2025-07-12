@@ -320,7 +320,7 @@ main() {
     echo -e "${blue}Selected GPU Type: $SELECTED_GPU_TYPE${no_color}"
     echo -e "${blue}GPU PCI Address: $GPU_PCI_ID${no_color}"
     echo -e "${blue}VFIO IDs: $VFIO_IDS${no_color}"
-    
+
     return 0
 }
 

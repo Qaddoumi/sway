@@ -59,7 +59,7 @@ exec --no-startup-id /usr/lib/xdg-desktop-portal -r
 # An overlay that shows schemas for all workspaces to make navigation in sway easier.
 #exec rm -f /tmp/sovpipe && mkfifo /tmp/sovpipe && tail -f /tmp/sovpipe | sov -t 500
 
-exec_once /usr/local/bin/gpu-switch.sh host
+exec /usr/local/bin/gpu-switch.sh host
 
 ### Colorscheme
 

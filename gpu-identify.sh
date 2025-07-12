@@ -510,10 +510,17 @@ case "\$1" in
         fi
 
         # load host GPU drivers with checks
-        echo -e "\${blue}loading host drivers...\${no_color}"
-        for module in nvidia nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
-            sudo modprobe "\$module" 2>/dev/null || true
-        done
+        if [[ "\$GPU_DRIVER" == "nvidia" ]]; then
+            echo -e "\${blue}loading host drivers...\${no_color}"
+            for module in nvidia nouveau nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight; do
+                sudo modprobe "\$module" 2>/dev/null || true
+            done
+        elif [[ "\$GPU_DRIVER" == "amdgpu" ]]; then
+            echo -e "\${blue}loading host drivers...\${no_color}"
+            for module in amdgpu radeon; do
+                sudo modprobe "\$module" 2>/dev/null || true
+            done
+        fi
 
         # Bind to host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then

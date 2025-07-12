@@ -330,7 +330,7 @@ if [ -n "$VFIO_IDS" ]; then
         2)
             # No bootloader detected
             echo -e "${red}Unable to detect bootloader (GRUB or systemd-boot)${no_color}"
-            echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS' to your kernel parameters${no_color}"
+            echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset' to your kernel parameters${no_color}"
             #exit 1
             ;;
     esac

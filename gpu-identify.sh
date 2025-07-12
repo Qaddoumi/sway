@@ -723,6 +723,8 @@ if is_gpu_passed_to_vm "\$COMMAND"; then
         $SWITCH_SCRIPT vm
     elif [ "\$EVENT" = "release" ]; then
         $SWITCH_SCRIPT host
+    else
+        echo -e "\${red}Unknown event: \$EVENT\${no_color}"
     fi
 else
     echo -e "\${red}GPU is not passed to VM, Or something happen during the process!!\${no_color}"

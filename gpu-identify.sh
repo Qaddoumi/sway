@@ -545,8 +545,8 @@ SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
 echo -e "${green}Making the switch script runs without password${no_color}"
-if ! grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /mnt/etc/sudoers; then
-    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" >> /mnt/etc/sudoers || warn "Failed to configure sudo"
+if ! grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
+    echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" >> /etc/sudoers || warn "Failed to configure sudo"
 fi
 
 echo ""

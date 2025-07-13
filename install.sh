@@ -202,7 +202,7 @@ sudo virsh net-autostart default || true
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-
+bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/gpu-identify.sh)
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

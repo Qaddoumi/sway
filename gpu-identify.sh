@@ -468,9 +468,9 @@ case "\$1" in
         done
         delay_with_progress 5
 
-        # Load the integrated gpu
-        sudo modprobe i915 || true # For Intel integrated GPU
-        sudo modprobe amdgpu || true  # For AMD integrated GPU
+        ## Load the integrated gpu
+        #sudo modprobe i915 || true # For Intel integrated GPU
+        #sudo modprobe amdgpu || true  # For AMD integrated GPU
 
         # Unbind devices from host drivers
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then

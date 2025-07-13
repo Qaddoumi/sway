@@ -333,7 +333,7 @@ if ! grep -q -E "(vmx|svm)" /proc/cpuinfo; then
     echo -e "${yellow}Please enable virtualization in your BIOS/UEFI settings${no_color}"
 else
     echo -e "${green}CPU supports virtualization${no_color}"
-    enable_nested_virtualization
+    enable_nested_virtualization || true
 fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
@@ -490,7 +490,7 @@ kvm_acl_setup() {
 echo -e "${green}Target directory: $KVM_IMAGES_DIR${no_color}"
 echo -e "${green}Target user: $target_user${no_color}"
 
-kvm_acl_setup
+kvm_acl_setup || true
 
 echo -e "${green}KVM ACL setup completed${no_color}"
 echo -e "${green}New files and directories should inherit proper permissions.${no_color}"

@@ -578,7 +578,7 @@ echo -e "${blue}==================================================\n============
 # Final instructions
 echo ""
 echo -e "${green}Additional steps after reboot:${no_color}"
-echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT"
+echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT" || true
 echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"

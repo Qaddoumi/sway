@@ -668,7 +668,13 @@ get_vm_pci_devices_xmllint() {
     local vm_name="\$1"
 
     # Get the VM XML configuration
-    local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null)
+    if [ -t 0 ]; then
+        # No stdin, use virsh (but without sudo to avoid hanging)
+        local vm_xml=\$(virsh dumpxml "\$vm_name" 2>/dev/null)
+    else
+        # Read from stdin
+        local vm_xml=\$(cat)
+    fi
 
     if [ -z "\$vm_xml" ]; then
         echo -e "\${red}Failed to get XML for VM: \$vm_name\${no_color}" >&2

@@ -669,8 +669,9 @@ get_vm_pci_devices_xmllint() {
 
     # Get the VM XML configuration
     if [ -t 0 ]; then
-        # No stdin, use virsh (but without sudo to avoid hanging)
-        local vm_xml=\$(virsh dumpxml "\$vm_name" 2>/dev/null)
+        # No stdin, use virsh
+        # NOTE: This may cause libvirt to hang or stuck in infinite loop.
+        local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null)
     else
         # Read from stdin
         local vm_xml=\$(cat)

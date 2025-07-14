@@ -671,7 +671,7 @@ get_vm_pci_devices_xmllint() {
     if [ -t 0 ]; then
         # No stdin, use virsh
         # NOTE: This may cause libvirt to hang or stuck in infinite loop.
-        local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null)
+        local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null) || true
     else
         # Read from stdin
         local vm_xml=\$(cat)
@@ -703,7 +703,7 @@ is_gpu_passed_to_vm() {
     if [ -z "\$vm_name" ]; then
         echo -e "\${yellow}Usage: \$0 <vm-name>\${no_color}"
         echo -e "\${green}Available VMs:\${no_color}"
-        sudo virsh list --all --name
+        sudo virsh list --all --name || true
         return 1
     fi
 

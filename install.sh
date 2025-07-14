@@ -283,7 +283,7 @@ enable_nested_virtualization(){
             echo -e "${yellow}Cannot determine nested virtualization status${no_color}"
         fi
     }
-    check_nested_status "$cpu_type"
+    check_nested_status "$cpu_type" || true
 
     echo -e "${green}Enabling nested virtualization for current session...${no_color}"
     case "$cpu_type" in

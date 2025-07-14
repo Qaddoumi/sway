@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eu
 
 # to get a list of installed packages, you can use:
 # pacman -Qqe
@@ -505,10 +505,6 @@ echo -e "${blue}==================================================\n============
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-
-
-echo -e "${blue}==================================================\n==================================================${no_color}"
-
 echo -e "${green}adding user to necessary groups...${no_color}"
 
 sudo usermod -aG video $USER || true
@@ -572,13 +568,14 @@ else
     echo -e "${red}Unsupported login manager: $login_manager${no_color}"
 fi
 
-
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
 # Final instructions
 echo ""
+echo -e "${green}******************* Sway with my configuration Installation Script Completed *******************${no_color}"
+echo ""
 echo -e "${green}Additional steps after reboot:${no_color}"
-echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT" || true
+#echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT" || true
 echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"

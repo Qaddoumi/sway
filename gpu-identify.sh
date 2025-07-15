@@ -449,17 +449,6 @@ case "\$1" in
     "vm")
         echo -e "\${green}Switching GPU to VM mode...\${no_color}"
 
-        # # Stop display manager with timeout
-        # if systemctl is-active --quiet "\$LOGIN_MANAGER"; then
-        #     echo -e "\${blue}Stopping display manager...\${no_color}"
-        #     if ! sudo systemctl stop "\$LOGIN_MANAGER"; then
-        #         echo -e "\${red}Failed to stop display manager\${no_color}"
-        #         exit 1
-        #     fi
-        #     delay_with_progress 3  # Allow services to settle
-        # fi
-
-        # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
         for module in nvidia nouveau nvidiafb nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
             echo -e "\${green}Looking for module: \$module\${no_color}"
@@ -470,53 +459,58 @@ case "\$1" in
                 echo -e "\${yellow}Module \$module not found, skipping.\${no_color}"
             fi
         done
-        delay_with_progress 5
-
-        ## Load the integrated gpu
-        #sudo modprobe i915 || true # For Intel integrated GPU
-        #sudo modprobe amdgpu || true  # For AMD integrated GPU
+        delay_with_progress 3
 
         # Unbind devices from host drivers
+        echo -e "\${blue}Unbinding GPU and audio devices from host drivers...\${no_color}"
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
+            echo -e "\${green}Unbinding GPU: \$GPU_PCI_ID\${no_color}"
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
         fi
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
+            echo -e "\${green}Unbinding Audio: \$AUDIO_PCI_ID\${no_color}"
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
         fi
         
         # Bind to vfio-pci
+        echo -e "\${blue}Binding GPU and audio devices to vfio-pci...\${no_color}"
         if ! sudo modprobe vfio-pci; then
             echo -e "\${red}Failed to load vfio-pci\${no_color}"
             exit 1
         fi
         
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
+            echo -e "\${green}Binding GPU: \$GPU_PCI_ID to vfio-pci\${no_color}"
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         fi
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
+            echo -e "\${green}Binding Audio: \$AUDIO_PCI_ID to vfio-pci\${no_color}"
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/vfio-pci/bind 2>/dev/null || true
         fi
-
-        # echo -e "reload sway config"
-        # swaymsg reload
 
         echo -e "\${green}GPU switched to VM mode\${no_color}"
         ;;
     "host")
         echo -e "\${green}Switching GPU to host mode...\${no_color}"
         # Unbind from vfio-pci
+        echo -e "\${blue}Unbinding GPU and audio devices from vfio-pci...\${no_color}"
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
+            echo -e "\${green}Unbinding GPU: \$GPU_PCI_ID from vfio-pci\${no_color}"
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver/unbind 2>/dev/null || true
         fi
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
+            echo -e "\${green}Unbinding Audio: \$AUDIO_PCI_ID from vfio-pci\${no_color}"
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver/unbind 2>/dev/null || true
         fi
 
         # Clear driver overrides
+        echo -e "\${blue}Clearing driver overrides...\${no_color}"
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
+            echo -e "\${green}Clearing GPU driver override: \$GPU_PCI_ID\${no_color}"
             echo "" | sudo tee /sys/bus/pci/devices/\$GPU_PCI_ID/driver_override 2>/dev/null || true
         fi
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
+            echo -e "\${green}Clearing Audio driver override: \$AUDIO_PCI_ID\${no_color}"
             echo "" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver_override 2>/dev/null || true
         fi
 
@@ -535,21 +529,15 @@ case "\$1" in
         fi
 
         # Bind to host drivers
+        echo -e "\${blue}Binding GPU and audio devices to host drivers...\${no_color}"
         if [[ -n "\$GPU_PCI_ID" && -d "/sys/bus/pci/devices/\$GPU_PCI_ID" ]]; then
+            echo -e "\${green}Binding GPU: \$GPU_PCI_ID to \$GPU_DRIVER\${no_color}"
             echo "\$GPU_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$GPU_DRIVER/bind 2>/dev/null || true
         fi
         if [[ -n "\$AUDIO_PCI_ID" && -d "/sys/bus/pci/devices/\$AUDIO_PCI_ID" ]]; then
+            echo -e "\${green}Binding Audio: \$AUDIO_PCI_ID to \$AUDIO_DRIVER\${no_color}"
             echo "\$AUDIO_PCI_ID" | sudo tee /sys/bus/pci/drivers/\$AUDIO_DRIVER/bind 2>/dev/null || true
         fi
-
-        # # Restart display manager
-        # if ! sudo systemctl start "\$LOGIN_MANAGER"; then
-        #     echo -e "\${red}Failed to start display manager\${no_color}"
-        #     exit 1
-        # fi
-
-        # echo -e "reload sway config"
-        # swaymsg reload
 
         echo -e "\${green}GPU switched to host mode\${no_color}"
         ;;

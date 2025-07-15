@@ -587,3 +587,5 @@ echo -e "${blue}==================================================\n============
 # ls -la /sys/class/drm/card*/device/driver || true
 # echo -e "${blue}List of open files for GPU devices:${no_color}"
 # sudo lsof /dev/dri/card* || true
+# echo -e "${blue}List of PCI devices related to GPU:${no_color}"
+# lspci | grep -E "(VGA|3D|Display)"

@@ -627,6 +627,9 @@ elif [ "$GPU_TYPE" = "amdgpu" ]; then
     echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/blacklist-amd.conf > /dev/null
 fi
 
+echo -e "${green}Creating VFIO configuration file /etc/modprobe.d/vfio.conf${no_color}"
+echo -e "options vfio-pci ids=$VFIO_IDS" | sudo tee /etc/modprobe.d/vfio.conf > /dev/null
+
 # Update initramfs
 echo -e "${green}Updating initramfs...${no_color}"
 if sudo mkinitcpio -P; then  # Note: Run 'update-initramfs -u' for debian based distro and Run 'kernelstub' if you are on popos

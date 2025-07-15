@@ -1,4 +1,4 @@
-# SWAY/SDDM
+# SWAY/SDDM and vm gpu passthrough
 
 SwayWM Configuration files. used with Arch Linux.
 

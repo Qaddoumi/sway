@@ -580,3 +580,10 @@ echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
 
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"
 echo -e "${blue}==================================================\n==================================================${no_color}"
+
+# # Additional commands to check GPU driver status
+# echo -e "${green}Checking GPU driver status...${no_color}"
+# echo -e "${blue}List of GPU driver files:${no_color}"
+# ls -la /sys/class/drm/card*/device/driver || true
+# echo -e "${blue}List of open files for GPU devices:${no_color}"
+# sudo lsof /dev/dri/card* || true

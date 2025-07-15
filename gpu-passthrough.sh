@@ -395,14 +395,13 @@ SWITCH_SCRIPT="/usr/local/bin/gpu-switch.sh"
 echo -e "${green}Creating GPU switch script at $SWITCH_SCRIPT${no_color}"
 
 # Determine driver based on GPU type
+AUDIO_DRIVER="snd_hda_intel"
 case "$GPU_TYPE" in
     "nvidia")
         GPU_DRIVER="nouveau"
-        AUDIO_DRIVER="snd_hda_intel"
         ;;
     "amdgpu")
         GPU_DRIVER="amdgpu"
-        AUDIO_DRIVER="snd_hda_intel"  # AMD audio often uses Intel HDA controller
         ;;
     *)
         echo -e "${red}No supported GPU driver detected for switching${no_color}"
@@ -743,7 +742,16 @@ sudo systemctl restart libvirtd || true
 
 echo ""
 
-echo -e "${green}IOMMU and GPU passthrough setup completed${no_color}"
+echo -e "${yellow}IOMMU and GPU passthrough setup completed${no_color}"
+echo -e "${yellow}To check if the kernel is binded to vfio-pci, run:${no_color}"
+echo -e "${green}lspci -nnk -d $nvidia_gpu_id 2>/dev/null || lspci -nnk -d $amd_gpu_id 2>/dev/null${no_color}"
+echo -e "${green}The output must show Kernel driver in use: vfio-pci. If it does, you have succeeded!${no_color}"
+echo -e "${green}(Don't worry if Kernel modules: still lists nouveau or radeon; the important line is Kernel driver in use:).${no_color}"
+echo -e "${green}Check DRM devices: with ls /sys/class/drm/${no_color}"
+echo -e "${green}You should now only see one card listed (e.g., card0, renderD128, etc.), which will be your integrated GPU${no_color}"
+
+
+
 echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"
 #TODO: the bottom line.
 echo -e "${green}Additional Notes\n . Some laptops require additional ACPI patches for proper GPU switching${no_color}"

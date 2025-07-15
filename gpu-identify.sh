@@ -4,7 +4,6 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
-# login_manager="${1:-sddm}"
 username="${2:-$USER}"
 
 # Colors for better readability
@@ -443,7 +442,6 @@ GPU_PCI_ID="$GPU_PCI_ID"
 AUDIO_PCI_ID="$AUDIO_PCI_ID"
 GPU_DRIVER="$GPU_DRIVER"
 AUDIO_DRIVER="$AUDIO_DRIVER"
-# LOGIN_MANAGER="$login_manager"
 
 case "\$1" in
     "vm")

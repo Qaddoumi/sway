@@ -462,8 +462,12 @@ case "\$1" in
         # Unload host GPU drivers with checks
         echo -e "\${blue}Unloading host drivers...\${no_color}"
         for module in nvidia nouveau nvidiafb nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight amdgpu radeon; do
+            echo -e "\${green}Looking for module: \$module\${no_color}"
             if lsmod | grep -q "\$module"; then
+                echo -e "\${green}Removing module: \$module\${no_color}"
                 sudo modprobe -r "\$module" 2>/dev/null || true
+            else
+                echo -e "\${yellow}Module \$module not found, skipping.\${no_color}"
             fi
         done
         delay_with_progress 5
@@ -516,15 +520,16 @@ case "\$1" in
             echo "" | sudo tee /sys/bus/pci/devices/\$AUDIO_PCI_ID/driver_override 2>/dev/null || true
         fi
 
-        # load host GPU drivers with checks
+        # load host GPU drivers
+        echo -e "\${blue}loading host drivers...\${no_color}"
         if [[ "\$GPU_DRIVER" == "nvidia" ]]; then
-            echo -e "\${blue}loading host drivers...\${no_color}"
             for module in nvidia nouveau nvidiafb nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight; do
+                echo -e "\${green}Loading module: \$module\{no_color}"
                 sudo modprobe "\$module" 2>/dev/null || true
             done
         elif [[ "\$GPU_DRIVER" == "amdgpu" ]]; then
-            echo -e "\${blue}loading host drivers...\${no_color}"
             for module in amdgpu radeon; do
+                echo -e "\${green}Loading module: \$module\${no_color}"
                 sudo modprobe "\$module" 2>/dev/null || true
             done
         fi
@@ -671,7 +676,11 @@ get_vm_pci_devices_xmllint() {
     if [ -t 0 ]; then
         # No stdin, use virsh
         # NOTE: This may cause libvirt to hang or stuck in infinite loop.
-        local vm_xml=\$(sudo virsh dumpxml "\$vm_name" 2>/dev/null) || true
+        local vm_xml=\$(timeout 10 sudo virsh dumpxml "\$vm_name" 2>/dev/null)
+        if [ \$? -eq 124 ]; then
+            echo -e "\${red}virsh dumpxml timed out\${no_color}" >&2
+            return 1
+        fi
     else
         # Read from stdin
         local vm_xml=\$(cat)

@@ -555,7 +555,6 @@ echo ""
 echo -e "${green}Loading VFIO kernel modules...${no_color}"
 MODULES_LOAD_CONF="/etc/modules-load.d/vfio.conf"
 if [[ ! -f "$MODULES_LOAD_CONF" ]]; then
-    # TODO: add vfio_virqfd module
     echo -e "vfio\nvfio_iommu_type1\nvfio_pci" | sudo tee "$MODULES_LOAD_CONF" > /dev/null
     echo -e "${green}Created $MODULES_LOAD_CONF with VFIO modules${no_color}"
 else
@@ -566,8 +565,6 @@ echo -e "${green}Update initramfs to include VFIO modules:${no_color}"
 
 # Configuration file
 MKINITCPIO_CONF="/etc/mkinitcpio.conf"
-# VFIO modules to add
-# TODO: add vfio_virqfd module
 VFIO_MODULES="vfio vfio_iommu_type1 vfio_pci"
 
 echo -e "${green}Starting VFIO modules configuration for $MKINITCPIO_CONF...${no_color}"

@@ -32,17 +32,20 @@ echo -e "${green}CPU Vendor: $CPU_VENDOR${no_color}"
 
 # Integrated gpu modeset
 integrated_gpu_modeset=""
+discrete_gpu_modeset=""
 # Determine IOMMU parameter based on CPU vendor
 echo -e "${green}Determining IOMMU parameter based on CPU vendor${no_color}"
 if [[ "$CPU_VENDOR" == "GenuineIntel" ]]; then
     IOMMU_PARAM="intel_iommu=on"
     integrated_gpu_modeset="i915.modeset=1"
-    echo -e "${green}Intel CPU detected - will use intel_iommu=on $integrated_gpu_modeset${no_color}"
+    discrete_gpu_modeset="noveau.modeset=0"
+    echo -e "${green}Intel CPU detected - will use intel_iommu=on $integrated_gpu_modeset $discrete_gpu_modeset${no_color}"
 elif [[ "$CPU_VENDOR" == "AuthenticAMD" ]]; then
     echo -e "${red}This script does not handle amd inegrated gpu with amd discrete gpe probebly${no_color}"
     IOMMU_PARAM="amd_iommu=on"
     integrated_gpu_modeset="amdgpu.modeset=1"
-    echo -e "${green}AMD CPU detected - will use amd_iommu=on $integrated_gpu_modeset${no_color}"
+    discrete_gpu_modeset="radeon.modeset=0"
+    echo -e "${green}AMD CPU detected - will use amd_iommu=on $integrated_gpu_modeset $discrete_gpu_modeset${no_color}"
 else
     echo -e "${red}Unknown CPU vendor: $CPU_VENDOR${no_color}"
     echo -e "${red}Please manually add the appropriate IOMMU parameter for your CPU${no_color}"
@@ -199,14 +202,7 @@ if [ -n "$amd_gpu" ]; then
     GPU_PCI_ID="$amd_pci_addr"
 fi
 
-
-# if [[ "$GPU_TYPE" == "nvidia" ]]; then
-#     loading_gpu_modules_at_boot="nouveau.modeset=1 nvidia_wmi_ec_backlight.modeset=1"
-# elif [[ "$GPU_TYPE" == "amdgpu" ]]; then
-#     loading_gpu_modules_at_boot="radeon.modeset=1"
-# fi
-
-echo -e "${green}\nAdding $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset to the bootloader\n${no_color}"
+echo -e "${green}\nAdding $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset to the bootloader\n${no_color}"
 
 echo -e "${green}Detecting bootloader...${no_color}"
 bootloader_type=2
@@ -264,7 +260,7 @@ if [ -n "$VFIO_IDS" ]; then
             
             if [[ -z "$entries_dir" ]] || ! sudo test -d "$entries_dir"; then
                 echo -e "${red}Could not locate systemd-boot entries directory${no_color}"
-                echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset' to your boot entry${no_color}"
+                echo -e "${yellow}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset' to your boot entry${no_color}"
                 #exit 1
             fi
             
@@ -294,12 +290,12 @@ if [ -n "$VFIO_IDS" ]; then
                 
                 # Add IOMMU parameter to the options line
                 if sudo grep -q "^options" "$entry"; then
-                    sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset/" "$entry"
-                    echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
+                    sudo sed -i "/^options/ s/$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset/" "$entry"
+                    echo -e "${green}Updated $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset${no_color}"
                 else
                     # If no options line exists, add one
-                    echo "options $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset" | sudo tee -a "$entry" > /dev/null
-                    echo -e "${green}Added options line to $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
+                    echo "options $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset" | sudo tee -a "$entry" > /dev/null
+                    echo -e "${green}Added options line to $(basename "$entry") with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset${no_color}"
                 fi
             done
             ;;
@@ -320,8 +316,8 @@ if [ -n "$VFIO_IDS" ]; then
                 echo -e "${yellow}IOMMU parameter already present in GRUB configuration${no_color}"
             else
                 # Add IOMMU parameter to GRUB_CMDLINE_LINUX_DEFAULT
-                sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset\"/" "$GRUB_CONFIG"
-                echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset${no_color}"
+                sudo sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/\"$/ $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset\"/" "$GRUB_CONFIG"
+                echo -e "${green}Updated GRUB configuration with: $IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset${no_color}"
             fi
 
             # Regenerate GRUB configuration
@@ -336,7 +332,7 @@ if [ -n "$VFIO_IDS" ]; then
         2)
             # No bootloader detected
             echo -e "${red}Unable to detect bootloader (GRUB or systemd-boot)${no_color}"
-            echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset' to your kernel parameters${no_color}"
+            echo -e "${red}Please manually add '$IOMMU_PARAM iommu=pt vfio-pci.ids=$VFIO_IDS $integrated_gpu_modeset $discrete_gpu_modeset' to your kernel parameters${no_color}"
             #exit 1
             ;;
     esac

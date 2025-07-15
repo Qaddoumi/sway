@@ -608,15 +608,15 @@ else
 
 fi
 
-echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_color}"
-if [ "$GPU_TYPE" = "nvidia" ]; then
-    echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau\nblacklist nvidiafb\nblacklist nvidia_uvm\nblacklist nvidia_wmi_ec_backlight" | sudo tee /etc/modprobe.d/blacklist-nvidia.conf > /dev/null
-elif [ "$GPU_TYPE" = "amdgpu" ]; then
-    echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/blacklist-amd.conf > /dev/null
-fi
+# echo -e "${green}Blacklist host GPU drivers to prevent automatic binding:${no_color}"
+# if [ "$GPU_TYPE" = "nvidia" ]; then
+#     echo -e "blacklist nvidia\nblacklist nvidia_drm\nblacklist nvidia_modeset\nblacklist nouveau\nblacklist nvidiafb\nblacklist nvidia_uvm\nblacklist nvidia_wmi_ec_backlight" | sudo tee /etc/modprobe.d/blacklist-nvidia.conf > /dev/null
+# elif [ "$GPU_TYPE" = "amdgpu" ]; then
+#     echo -e "blacklist amdgpu\nblacklist radeon" | sudo tee /etc/modprobe.d/blacklist-amd.conf > /dev/null
+# fi
 
-echo -e "${green}Creating VFIO configuration file /etc/modprobe.d/vfio.conf${no_color}"
-echo -e "options vfio-pci ids=$VFIO_IDS" | sudo tee /etc/modprobe.d/vfio.conf > /dev/null
+# echo -e "${green}Creating VFIO configuration file /etc/modprobe.d/vfio.conf${no_color}"
+# echo -e "options vfio-pci ids=$VFIO_IDS" | sudo tee /etc/modprobe.d/vfio.conf > /dev/null
 
 # Update initramfs
 echo -e "${green}Updating initramfs...${no_color}"

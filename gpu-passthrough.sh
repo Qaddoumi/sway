@@ -401,7 +401,7 @@ echo -e "${green}Creating GPU switch script at $SWITCH_SCRIPT${no_color}"
 # Determine driver based on GPU type
 case "$GPU_TYPE" in
     "nvidia")
-        GPU_DRIVER="nvidia"
+        GPU_DRIVER="nouveau"
         AUDIO_DRIVER="snd_hda_intel"
         ;;
     "amdgpu")
@@ -514,7 +514,7 @@ case "\$1" in
 
         # load host GPU drivers
         echo -e "\${blue}loading host drivers...\${no_color}"
-        if [[ "\$GPU_DRIVER" == "nvidia" ]]; then
+        if [[ "\$GPU_DRIVER" == "nouveau" ]]; then
             for module in nvidia nouveau nvidiafb nvidia_drm nvidia_modeset nvidia_uvm nvidia_wmi_ec_backlight; do
                 echo -e "\${green}Loading module: \$module\{no_color}"
                 sudo modprobe "\$module" 2>/dev/null || true
@@ -549,10 +549,6 @@ esac
 SWITCH_SCRIPT_EOF
 
 sudo chmod +x "$SWITCH_SCRIPT"
-# echo -e "${green}Making the switch script runs without password${no_color}"
-# if ! sudo grep -Fxq "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" /etc/sudoers; then
-#     echo "$username ALL=(ALL) NOPASSWD: $SWITCH_SCRIPT" | sudo tee -a /etc/sudoers > /dev/null
-# fi
 
 echo ""
 # Load vfio modules

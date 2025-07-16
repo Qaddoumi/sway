@@ -536,8 +536,8 @@ sudo rm -rf ~/sway
 
 echo -e "${green}Setting up permissions for configuration files${no_color}"
 # TODO: give permission to run other scripts.
-chmod +x ~/.config/waybar/scripts/*.sh || true
-chmod +x ~/.config/sway/scripts/*.sh || true
+sudo chmod +x ~/.config/waybar/scripts/*.sh || true
+sudo chmod +x ~/.config/sway/scripts/*.sh || true
 
 # if ! grep -q 'export PATH="$PATH:$HOME/.local/bin"' ~/.bashrc; then
 #     echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc

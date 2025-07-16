@@ -3,7 +3,8 @@
 SwayWM Configuration files. used with Arch Linux.
 
 Note: this project is not ready, please don't use it.
-
+## ⚠️ Warning ⚠️
+This project is not ready yet, it is a work in progress. It may not work as expected and may cause issues with your system. Use it at your own risk.
 ## 🏔️ Installation 🏔️
 
 - Run :

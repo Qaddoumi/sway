@@ -69,10 +69,10 @@ echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go || true
 
 install_yay() {
-    git clone --depth 1 https://aur.archlinux.org/yay.git || true
+    sudo git clone --depth 1 https://aur.archlinux.org/yay.git || true
     cd yay || true
     makepkg -si --noconfirm || true
-    cd .. && rm -rf yay || true
+    cd .. && sudo rm -rf yay || true
     yay --version || true
 }
 
@@ -524,9 +524,9 @@ echo -e "${blue}==================================================\n============
 echo -e "${green}Cloning and setting up configuration files${no_color}"
 
 if [ -d ~/sway ]; then
-    rm -rf ~/sway
+    sudo rm -rf ~/sway
 fi
-if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
+if ! sudo git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
@@ -563,13 +563,6 @@ elif [[ "$login_manager" == "sddm" ]]; then
     sudo pacman -S --needed --noconfirm sddm
     sudo systemctl disable display-manager.service || true
     sudo systemctl enable sddm.service || true
-    # # Edit the configuration file /etc/sddm.conf to set the default session to sway
-    # if ! grep -q "Session=sway" /etc/sddm.conf; then
-    #     echo -e "${green}Setting default session to sway in /etc/sddm.conf${no_color}"
-    #     echo -e "[General]\nInputMethod=\n\n[Autologin]\nUser=$USER\nSession=sway" | sudo tee /etc/sddm.conf > /dev/null || true
-    # else
-    #     echo -e "${yellow}Default session is already set to sway in /etc/sddm.conf${no_color}"
-    # fi
     echo -e "${green}Setting up my Hacker theme for SDDM${no_color}"
     bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh)
 else
@@ -578,7 +571,6 @@ fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
-# Final instructions
 echo ""
 echo -e "${green}******************* Sway with my configuration Installation Script Completed *******************${no_color}"
 echo ""

@@ -132,9 +132,9 @@ sudo pacman -S --needed --noconfirm file-roller # Handling archive files
 sudo pacman -S --needed --noconfirm libxml2 # XML parsing library
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
-yay -S --needed --noconfirm google-chrome || true # Web browser
-yay -S --needed --noconfirm visual-studio-code-bin || true # Visual Studio Code
-yay -S --needed --noconfirm oh-my-posh || true # Theme engine for terminal
+yay -S --needed --noconfirm google-chrome || echo -e "${red}Failed to install google-chrome${no_color}" # Web browser
+yay -S --needed --noconfirm visual-studio-code-bin || echo -e "${red}Failed to install visual-studio-code-bin${no_color}" # Visual Studio Code
+yay -S --needed --noconfirm oh-my-posh || echo -e "${red}Failed to install oh-my-posh${no_color}" # Theme engine for terminal
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

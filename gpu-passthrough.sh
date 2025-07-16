@@ -119,7 +119,7 @@ if [ -n "$nvidia_gpu" ]; then
     nvidia_bus=$(echo "$nvidia_pci_addr" | cut -d':' -f1)
     
     # Look for NVIDIA audio on same bus
-    nvidia_audio=$(lspci -nn | grep -E "Audio.*NVIDIA" | grep "^$nvidia_bus:")
+    nvidia_audio=$(lspci -nn | grep -E "Audio.*NVIDIA" | grep "^$nvidia_bus:") # TODO: did not work in a vm ???
     
     if [ -n "$nvidia_audio" ]; then
         echo -e "${green}NVIDIA Audio Device:${no_color} $nvidia_audio"

@@ -69,7 +69,7 @@ echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go || true
 
 install_yay() {
-    git clone https://aur.archlinux.org/yay.git || true
+    git clone --depth 1 https://aur.archlinux.org/yay.git || true
     cd yay || true
     makepkg -si --noconfirm || true
     cd .. && rm -rf yay || true

@@ -530,9 +530,9 @@ if ! sudo git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list
-mkdir -p ~/.config && cp -r ~/sway/.config/* ~/.config/
-rm -rf ~/sway
+sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list
+sudo mkdir -p ~/.config && sudo cp -r ~/sway/.config/* ~/.config/
+sudo rm -rf ~/sway
 
 echo -e "${green}Setting up permissions for configuration files${no_color}"
 # TODO: give permission to run other scripts.
@@ -542,8 +542,8 @@ chmod +x ~/.config/sway/scripts/*.sh || true
 # if ! grep -q 'export PATH="$PATH:$HOME/.local/bin"' ~/.bashrc; then
 #     echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 # fi
-if ! grep -q "source ~/.config/oh-my-posh/gmay.omp.json" ~/.bashrc; then
-    echo 'eval "$(oh-my-posh init bash --config ~/.config/oh-my-posh/gmay.omp.json)"' >> ~/.bashrc || true
+if ! sudo grep -q "source ~/.config/oh-my-posh/gmay.omp.json" ~/.bashrc; then
+    echo 'eval "$(oh-my-posh init bash --config ~/.config/oh-my-posh/gmay.omp.json)"' | sudo tee ~/.bashrc > /dev/null
 fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"

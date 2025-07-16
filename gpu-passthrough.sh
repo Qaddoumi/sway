@@ -636,14 +636,18 @@ echo -e "${green}Create libvirt hook to automate GPU switching, at $LIBVIRTHOOK_
 cat << LIBVIRTHOOK_SCRIPT_EOF | sudo tee "$LIBVIRTHOOK_SCRIPT" > /dev/null
 #!/bin/bash
 
+# Reference : https://libvirt.org/hooks.html
+
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # No Color
 
-COMMAND="\$1"
-EVENT="\$2"
+GUEST_NAME="\$1"
+HOOK_NAME="\$2" # prepare, start, started, stopped or release
+STATE_NAME="\$3" # begin or end
+SHUTOFF_REASON="\$4" # provides the reason for the shutdown of the domain
 
 # Function to extract PCI devices from VM XML using xmllint (more robust)
 get_vm_pci_devices_xmllint() {
@@ -652,7 +656,8 @@ get_vm_pci_devices_xmllint() {
     # Get the VM XML configuration
     if [ -t 0 ]; then
         # No stdin, use virsh
-        # NOTE: This may cause libvirt to hang or stuck in infinite loop.
+        # NOTE: This may cause libvirt to hang or stuck in infinite loop, if it 
+        # called by libvirt, A deadlock is likely to occur.
         local vm_xml=\$(timeout 10 sudo virsh dumpxml "\$vm_name" 2>/dev/null)
         if [ \$? -eq 124 ]; then
             echo -e "\${red}virsh dumpxml timed out\${no_color}" >&2
@@ -724,14 +729,14 @@ is_gpu_passed_to_vm() {
 }
 
 # Main execution
-if is_gpu_passed_to_vm "\$COMMAND"; then
+if is_gpu_passed_to_vm "\$GUEST_NAME"; then
     echo -e "\${green}GPU is passed to VM\${no_color}"
-    if [ "\$EVENT" = "prepare" ]; then
+    if [ "\$HOOK_NAME" = "prepare" ] && [ "\$STATE_NAME" = "begin" ]; then
         $SWITCH_SCRIPT vm
-    elif [ "\$EVENT" = "release" ]; then
+    elif [ "\$HOOK_NAME" = "release" ] && [ "\$STATE_NAME" = "end" ]; then
         $SWITCH_SCRIPT host
     else
-        echo -e "\${red}Unknown event: \$EVENT\${no_color}"
+        echo -e "\${red}Unknown HOOK: \$HOOK_NAME\${no_color}"
     fi
 else
     echo -e "\${red}GPU is not passed to VM, Or something happen during the process!!\${no_color}"

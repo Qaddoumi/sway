@@ -59,8 +59,8 @@ if [ -z "$login_manager" ]; then
     echo -e "${red}Login manager cannot be empty. will use the default: $login_manager${no_color}"
     login_manager="sddm"  # Fallback to the default login manager
 fi
-echo -e "${green}Login manager to be used: $login_manager${no_color}"
-echo -e "${green}Username to be used     : $username${no_color}"
+echo -e "${green}Login manager to be used : $login_manager${no_color}"
+echo -e "${green}Username to be used      : $username${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
@@ -90,13 +90,13 @@ if command -v yay &> /dev/null ; then
     elif printf '%s\n%s\n' "$LATEST_VERSION" "$CURRENT_VERSION" | sort -V | tail -n1 | grep -q "^$LATEST_VERSION$"; then
         echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
         echo "Proceeding with update..."
-        install_yay
+        install_yay || true
     else
         echo "Current version is newer than or equal to latest available"
     fi
 else
     echo "yay is not installed. Proceeding with installation..."
-    install_yay
+    install_yay || true
 fi
 
 echo -e "${blue}==================================================\n==================================================${no_color}"

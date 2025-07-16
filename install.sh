@@ -574,18 +574,5 @@ echo -e "${blue}==================================================\n============
 echo ""
 echo -e "${green}******************* Sway with my configuration Installation Script Completed *******************${no_color}"
 echo ""
-echo -e "${green}Additional steps after reboot:${no_color}"
-#echo -e "1. Check IOMMU groups: sudo $CHECK_SCRIPT" || true
-echo -e "2. Verify IOMMU is enabled: sudo dmesg | grep -i iommu"
-
 echo -e "${yellow}REBOOT REQUIRED - Please reboot your system now!${no_color}"
 echo -e "${blue}==================================================\n==================================================${no_color}"
-
-# # Additional commands to check GPU driver status
-# echo -e "${green}Checking GPU driver status...${no_color}"
-# echo -e "${blue}List of GPU driver files:${no_color}"
-# ls -la /sys/class/drm/card*/device/driver || true
-# echo -e "${blue}List of open files for GPU devices:${no_color}"
-# sudo lsof /dev/dri/card* || true
-# echo -e "${blue}List of PCI devices related to GPU:${no_color}"
-# lspci | grep -E "(VGA|3D|Display)"

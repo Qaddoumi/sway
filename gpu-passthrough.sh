@@ -384,6 +384,8 @@ echo ""
 echo -e "${green}To verify VFIO binding after reboot:${no_color}"
 echo -e "${green}lspci -nnk | grep -A 3 -E '(VGA|3D controller|Audio)'${no_color}"
 echo ""
+echo -e "${green}Another way to Verify IOMMU is enabled: sudo dmesg | grep -i iommu${no_color}"
+echo ""
 echo -e "${green}To monitor logs:${no_color}"
 echo -e "${green}sudo journalctl -f${no_color}"
 CHECK_SCRIPT_EOF
@@ -744,12 +746,20 @@ echo ""
 
 echo -e "${yellow}IOMMU and GPU passthrough setup completed${no_color}"
 echo -e "${yellow}To check if the kernel is binded to vfio-pci, run:${no_color}"
-echo -e "${green}lspci -nnk -d $nvidia_gpu_id 2>/dev/null || lspci -nnk -d $amd_gpu_id 2>/dev/null${no_color}"
+echo -e "${green}lspci -nnk -d $nvidia_gpu_id 2>/dev/null || lspci -nnk -d $amd_gpu_id 2>/dev/null${no_color}" # lspci -nnk -d 10de:28e0
 echo -e "${green}The output must show Kernel driver in use: vfio-pci. If it does, you have succeeded!${no_color}"
 echo -e "${green}(Don't worry if Kernel modules: still lists nouveau or radeon; the important line is Kernel driver in use:).${no_color}"
 echo -e "${green}Check DRM devices: with ls /sys/class/drm/${no_color}"
 echo -e "${green}You should now only see one card listed (e.g., card0, renderD128, etc.), which will be your integrated GPU${no_color}"
 
+# # Additional commands to check GPU driver status
+# echo -e "${green}Checking GPU driver status...${no_color}"
+# echo -e "${blue}List of GPU driver files:${no_color}"
+# ls -la /sys/class/drm/card*/device/driver || true
+# echo -e "${blue}List of open files for GPU devices:${no_color}"
+# sudo lsof /dev/dri/card* || true
+# echo -e "${blue}List of PCI devices related to GPU:${no_color}"
+# lspci | grep -E "(VGA|3D|Display)"
 
 
 echo -e "${yellow}Please reboot your system to apply the changes.${no_color}"

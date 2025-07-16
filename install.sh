@@ -33,8 +33,8 @@ backup_file() {
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
 # Parse named arguments --login-manager and --username
-login_manager="sddm"  # default
-username="$USER"      # default
+login_manager=""
+username=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --login-manager)
@@ -51,6 +51,14 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+if [ -z "$username" ]; then
+    echo -e "${red}Username cannot be empty. will use the default: $username${no_color}"
+    username="$USER"  # Fallback to the current user
+fi
+if [ -z "$login_manager" ]; then
+    echo -e "${red}Login manager cannot be empty. will use the default: $login_manager${no_color}"
+    login_manager="sddm"  # Fallback to the default login manager
+fi
 echo -e "${green}Login manager to be used: $login_manager${no_color}"
 echo -e "${green}Username to be used     : $username${no_color}"
 

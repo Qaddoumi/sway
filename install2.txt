@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -eu
 
 # to get a list of installed packages, you can use:
 # pacman -Qqe

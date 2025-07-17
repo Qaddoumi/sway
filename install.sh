@@ -554,11 +554,11 @@ if [[ "$login_manager" == "ly" ]]; then
 elif [[ "$login_manager" == "sddm" ]]; then
     echo -e "${green}Installing and configuring SDDM (Simple Desktop Display Manager)${no_color}"
 
-    sudo pacman -S --needed --noconfirm sddm
+    sudo pacman -S --needed --noconfirm sddm || true
     sudo systemctl disable display-manager.service || true
     sudo systemctl enable sddm.service || true
     echo -e "${green}Setting up my Hacker theme for SDDM${no_color}"
-    bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh)
+    bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sddm-hacker-theme/main/install.sh) || echo -e "${red}Failed to install the theme${no_color}"
 else
     echo -e "${red}Unsupported login manager: $login_manager${no_color}"
 fi

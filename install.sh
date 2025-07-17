@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -eu
 
 # to get a list of installed packages, you can use:
 # pacman -Qqe
@@ -17,12 +18,7 @@ no_color='\033[0m' # rest the color to default
 if [[ $EUID -eq 0 ]]; then
    echo -e "${red}This script should not be run as root. Please run as a regular user with sudo privileges.${no_color}"
    exit 1
-elif
-    echo -e "the script will use the user : $USER"
 fi
-username="$USER"
-
-set -eu
 
 backup_file() {
     local file="$1"
@@ -38,6 +34,7 @@ cd ~ || echo -e "${red}Failed to change directory to home${no_color}" && exit 1
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
+username="$USER"
 
 # Parse named arguments --login-manager
 login_manager=""

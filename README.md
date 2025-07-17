@@ -10,7 +10,10 @@ This project is not ready yet, it is a work in progress. It may not work as expe
 - Run :
 
 ``` shell
-bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh)
+# For Sway and SDDM installation
+bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh) --login-manager sddm
+# For Sway and Ly installation
+bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh) --login-manager ly
 ```
 
 - Or for only the config files :

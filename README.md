@@ -9,10 +9,13 @@ This project is not ready yet, it is a work in progress. It may not work as expe
 
 - Run :
 
+### For Sway and SDDM installation
 ``` shell
-# For Sway and SDDM installation
 bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh) --login-manager sddm
-# For Sway and Ly installation
+```
+
+### For Sway and Ly installation
+``` shell
 bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/install.sh) --login-manager ly
 ```
 

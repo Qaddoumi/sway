@@ -34,17 +34,14 @@ cd ~ || echo -e "${red}Failed to change directory to home${no_color}" && exit 1
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
-# Parse named arguments --login-manager and --username
+username="$USER"
+
+# Parse named arguments --login-manager
 login_manager=""
-username=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --login-manager)
             login_manager="$2"
-            shift 2
-            ;;
-        --username)
-            username="$2"
             shift 2
             ;;
         *)
@@ -53,13 +50,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-if [ -z "$username" ]; then
-    echo -e "${red}Username cannot be empty. will use the default: $username${no_color}"
-    username="$USER"  # Fallback to the current user
-fi
 if [ -z "$login_manager" ]; then
-    echo -e "${red}Login manager cannot be empty. will use the default: $login_manager${no_color}"
     login_manager="sddm"  # Fallback to the default login manager
+    echo -e "${yellow}Login manager cannot be empty. will use the default: $login_manager${no_color}"
 fi
 echo -e "${green}Login manager to be used : $login_manager${no_color}"
 echo -e "${green}Username to be used      : $username${no_color}"
@@ -537,7 +530,6 @@ sudo mkdir -p ~/.config && sudo cp -r ~/sway/.config/* ~/.config/
 sudo rm -rf ~/sway
 
 echo -e "${green}Setting up permissions for configuration files${no_color}"
-# TODO: give permission to run other scripts.
 sudo chmod +x ~/.config/waybar/scripts/*.sh || true
 sudo chmod +x ~/.config/sway/scripts/*.sh || true
 

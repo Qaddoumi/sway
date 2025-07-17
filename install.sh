@@ -30,6 +30,8 @@ backup_file() {
     fi
 }
 
+cd ~ || echo -e "${red}Failed to change directory to home${no_color}" && exit 1
+
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
 # Parse named arguments --login-manager and --username
@@ -69,7 +71,7 @@ echo -e "${green}Installing yay (Yet Another Yaourt)${no_color}"
 sudo pacman -S --needed --noconfirm git base-devel go || true
 
 install_yay() {
-    sudo git clone --depth 1 https://aur.archlinux.org/yay.git || true
+    git clone --depth 1 https://aur.archlinux.org/yay.git ~/yay || true
     cd yay || true
     makepkg -si --noconfirm || true
     cd .. && sudo rm -rf yay || true
@@ -526,7 +528,7 @@ echo -e "${green}Cloning and setting up configuration files${no_color}"
 if [ -d ~/sway ]; then
     sudo rm -rf ~/sway
 fi
-if ! sudo git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
+if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi

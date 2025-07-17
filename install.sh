@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -eu # Exit on error and unset variable
 
 # to get a list of installed packages, you can use:
 # pacman -Qqe
@@ -30,7 +30,7 @@ backup_file() {
     fi
 }
 
-cd ~ || echo -e "${red}Failed to change directory to home${no_color}" && exit 1
+cd ~ || echo -e "${red}Failed to change directory to home${no_color}"
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 

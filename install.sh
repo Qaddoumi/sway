@@ -190,6 +190,7 @@ sudo pacman -S --needed --noconfirm tuned # system tuning service for linux allo
 sudo pacman -S --needed --noconfirm spice-vdagent # SPICE agent for guest OS
 sudo pacman -S --needed --noconfirm bridge-utils # Utilities for managing network bridges
 sudo pacman -S --needed --noconfirm linux-headers # for vfio modules
+sudo pacman -S --needed --noconfirm linux-zen-headers # for zen kernel vfio modules
 
 echo -e "${green}Enabling and starting libvirtd service${no_color}"
 sudo systemctl enable libvirtd || true

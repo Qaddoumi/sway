@@ -130,6 +130,7 @@ sudo pacman -S --needed --noconfirm libxml2 # XML parsing library
 yay -S --needed --noconfirm google-chrome || echo -e "${red}Failed to install google-chrome${no_color}" # Web browser
 yay -S --needed --noconfirm visual-studio-code-bin || echo -e "${red}Failed to install visual-studio-code-bin${no_color}" # Visual Studio Code
 yay -S --needed --noconfirm oh-my-posh || echo -e "${red}Failed to install oh-my-posh${no_color}" # Theme engine for terminal
+yay -S --needed --noconfirm looking-glass || echo -e "${red}Failed to install looking-glass${no_color}" # Low latency video streaming tool
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
@@ -506,6 +507,59 @@ echo -e "${blue}==================================================\n============
 
 #TODO: Add AMD SEV Support
 #TODO: Optimise Host with TuneD
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
+echo -e "${green}Setting up looking-glass for low latency video streaming${no_color}"
+# Create the shared memory directory if it doesn't exist
+sudo mkdir -p /dev/shm || true
+
+# Add your user to the kvm group (if not already)
+sudo usermod -a -G kvm $USER || true
+
+# Create a udev rule for the shared memory device
+echo "SUBSYSTEM==\"kvmfr\", OWNER=\"$USER\", GROUP=\"kvm\", MODE=\"0660\"" | sudo tee /etc/udev/rules.d/99-looking-glass.rules > /dev/null || true
+
+# Reload udev rules
+sudo udevadm control --reload-rules || true
+sudo udevadm trigger || true
+
+#Edit libvirt configuration:
+LIBVIRT_CONF="/etc/libvirt/qemu.conf"
+if grep -qE '^\s*#\s*user\s*=' "$LIBVIRT_CONF"; then
+    echo -e "${green}Uncommenting user line and setting to $USER in $LIBVIRT_CONF${no_color}"
+    sudo sed -i "s|^\s*#\s*user\s*=.*|user = \"$USER\"|" "$LIBVIRT_CONF" || true
+elif grep -q 'user = ' "$LIBVIRT_CONF"; then
+    echo -e "${green}Changing user in $LIBVIRT_CONF to $USER${no_color}"
+    sudo sed -i "s|user = \".*\"|user = \"$USER\"|" "$LIBVIRT_CONF" || true
+else
+    echo -e "${green}Adding user = \"$USER\" to $LIBVIRT_CONF${no_color}"
+    echo "user = \"$USER\"" | sudo tee -a "$LIBVIRT_CONF" > /dev/null
+fi
+
+if grep -qE '^\s*#\s*group\s*=' "$LIBVIRT_CONF"; then
+    echo -e "${green}Uncommenting group line and setting to kvm in $LIBVIRT_CONF${no_color}"
+    sudo sed -i "s|^\s*#\s*group\s*=.*|group = \"kvm\"|" "$LIBVIRT_CONF" || true
+elif grep -q 'group = ' "$LIBVIRT_CONF"; then
+    echo -e "${green}Changing group in $LIBVIRT_CONF to kvm${no_color}"
+    sudo sed -i "s|group = \".*\"|group = \"kvm\"|" "$LIBVIRT_CONF" || true
+else
+    echo -e "${green}Adding group = \"kvm\" to $LIBVIRT_CONF${no_color}"
+    echo "group = \"kvm\"" | sudo tee -a "$LIBVIRT_CONF" > /dev/null
+fi
+
+echo -e "${green}Restarting libvirtd service to apply changes...${no_color}"
+sudo systemctl restart libvirtd || true
+
+echo -e "${green}Make sure to add the following line to your VM XML configuration:
+<shmem name='looking-glass'>
+  <model type='ivshmem-plain'/>
+  <size unit='M'>128</size>
+</shmem>${no_color}"
+echo -e "${green}You can also use the following command to check if the shared memory device is created:${no_color}"
+echo -e "${green}ls -l /dev/shm/looking-glass*${no_color}"
+
+echo -e "${green}Setting up looking-glass completed${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

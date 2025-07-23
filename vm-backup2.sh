@@ -8,7 +8,7 @@ set -euo pipefail
 # Configuration
 BACKUP_DIR="/home/$USER/backup_vms"
 LOG_DIR="$BACKUP_DIR/vm-logs"
-mkdir -p $BACKUP_DIR $LOG_DIR
+sudo mkdir -p $BACKUP_DIR $LOG_DIR
 LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
@@ -39,7 +39,7 @@ cleanup() {
     
     if [[ -n "$CURRENT_BACKUP_DIR" && -d "$CURRENT_BACKUP_DIR" ]]; then
         warning "Cleaning up partial backup: $CURRENT_BACKUP_DIR"
-        rm -rf "$CURRENT_BACKUP_DIR"
+        sudo rm -rf "$CURRENT_BACKUP_DIR"
     fi
     
     # Release all locks
@@ -66,7 +66,7 @@ notify() {
 log() {
     local log_data="[$(date '+%Y-%m-%d %H:%M:%S')] - $1"
     # Save the log into a file .
-    if ! echo "$log_data" >> "$LOG_FILE"; then
+    if ! echo "$log_data" | sudo tee -a "$LOG_FILE" >/dev/null; then
         echo "Failed to write to log file: $LOG_FILE" >&2
     fi
 }
@@ -92,23 +92,23 @@ warning() {
     echo -e "${YELLOW}[WARNING]${NC} $msg"
 }
 
-# Check if running as root
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        error "This script must be run as root (use sudo)"
-        exit 1
-    fi
-}
+# # Check if running as root
+# check_root() {
+#     if [[ $EUID -ne 0 ]]; then
+#         error "This script must be run as root (use sudo)"
+#         exit 1
+#     fi
+# }
 
 # Create backup directory if it doesn't exist
 ensure_backup_dir() {
     if [[ ! -d "$BACKUP_DIR" ]]; then
         log "Creating backup directory: $BACKUP_DIR"
-        mkdir -p "$BACKUP_DIR"
+        sudo mkdir -p "$BACKUP_DIR"
     fi
     
     # Ensure lock directory exists
-    mkdir -p "$LOCK_DIR"
+    sudo mkdir -p "$LOCK_DIR"
 }
 
 # Check available disk space
@@ -171,7 +171,7 @@ acquire_vm_lock() {
             lock_pid=$(cat "$lock_file" 2>/dev/null || echo "")
             if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
                 warning "Removing stale lock for VM: $vm_name"
-                rm -f "$lock_file"
+                sudo rm -f "$lock_file"
                 continue
             fi
         fi
@@ -190,7 +190,7 @@ release_vm_lock() {
     local lock_file="$LOCK_DIR/${vm_name}.lock"
     
     if [[ -f "$lock_file" ]]; then
-        rm -f "$lock_file"
+        sudo rm -f "$lock_file"
         # Remove from locked VMs array
         local new_array=()
         for vm in "${LOCKED_VMS[@]}"; do
@@ -208,7 +208,7 @@ virsh_with_timeout() {
     local timeout="$1"
     shift
     
-    if timeout "$timeout" virsh "$@"; then
+    if sudo timeout "$timeout" virsh "$@"; then
         return 0
     else
         local exit_code=$?
@@ -224,7 +224,7 @@ virsh_with_timeout() {
 # Calculate MD5 checksum
 calculate_checksum() {
     local file_path="$1"
-    md5sum "$file_path" | cut -d' ' -f1
+    sudo md5sum "$file_path" | cut -d' ' -f1
 }
 
 # Verify file integrity
@@ -270,7 +270,7 @@ validate_qemu_img_operation() {
     fi
     
     # Verify the image format
-    if ! qemu-img info "$dest_file" >/dev/null 2>&1; then
+    if ! sudo qemu-img info "$dest_file" >/dev/null 2>&1; then
         error "qemu-img info failed on destination file: $dest_file"
         return 1
     fi
@@ -312,7 +312,7 @@ validate_backup() {
         disk_files=($(find "$backup_dir" -name "*.qcow2" -o -name "*.img" -o -name "*.raw"))
         
         for disk_file in "${disk_files[@]}"; do
-            if ! qemu-img info "$disk_file" >/dev/null 2>&1; then
+            if ! sudo qemu-img info "$disk_file" >/dev/null 2>&1; then
                 error "Invalid disk image in backup: $disk_file"
                 return 1
             fi
@@ -464,8 +464,8 @@ backup_vm() {
                 if $PV_AVAILABLE; then
                     # Use pv for nice progress bar if available
                     log "Using pv for progress tracking..."
-                    if ! qemu-img convert -O qcow2 -c "$disk_path" - | \
-                        pv -s "$disk_size" -N "$disk_name" > "$dest_file"; then
+                    if ! sudo qemu-img convert -O qcow2 -c "$disk_path" - | \
+                        sudo pv -s "$disk_size" -N "$disk_name" > "$dest_file"; then
                         error "Failed to backup disk image: $disk_path"
                         release_vm_lock "$vm_name"
                         return 1
@@ -473,7 +473,7 @@ backup_vm() {
                 else
                     # Fallback to basic progress if pv not available
                     log "Starting backup (install 'pv' for better progress display)..."
-                    if ! qemu-img convert -O qcow2 -c -p "$disk_path" "$dest_file"; then
+                    if ! sudo qemu-img convert -O qcow2 -c -p "$disk_path" "$dest_file"; then
                         error "Failed to backup disk image: $disk_path"
                         release_vm_lock "$vm_name"
                         return 1
@@ -620,7 +620,7 @@ restore_vm() {
                 local disk_size=$(stat -c "%s" "$backup_disk")
                 
                 # Create target directory if it doesn't exist
-                mkdir -p "$target_dir"
+                sudo mkdir -p "$target_dir"
                 
                 log "Restoring $(basename "$backup_disk") to $original_path"
                 
@@ -638,15 +638,15 @@ restore_vm() {
                 
                 if $PV_AVAILABLE; then
                     # Use pv for restore progress
-                    if ! pv -s "$disk_size" -N "$(basename "$backup_disk")" "$backup_disk" | \
-                        qemu-img convert -O qcow2 - "$original_path"; then
+                    if ! sudo pv -s "$disk_size" -N "$(basename "$backup_disk")" "$backup_disk" | \
+                        sudo qemu-img convert -O qcow2 - "$original_path"; then
                         error "Failed to restore disk image: $backup_disk"
                         release_vm_lock "$vm_name"
                         return 1
                     fi
                 else
                     # Fallback to basic restore
-                    if ! qemu-img convert "$backup_disk" "$original_path"; then
+                    if ! sudo qemu-img convert "$backup_disk" "$original_path"; then
                         error "Failed to restore disk image: $backup_disk"
                         release_vm_lock "$vm_name"
                         return 1
@@ -654,13 +654,13 @@ restore_vm() {
                 fi
                 
                 # Validate restored disk
-                if ! qemu-img info "$original_path" >/dev/null 2>&1; then
+                if ! sudo qemu-img info "$original_path" >/dev/null 2>&1; then
                     error "Restored disk image appears to be corrupted: $original_path"
                     release_vm_lock "$vm_name"
                     return 1
                 fi
                 
-                chown qemu:qemu "$original_path" 2>/dev/null || true
+                sudo chown qemu:qemu "$original_path" 2>/dev/null || true
             fi
             ((line_number++))
         done < "$backup_path/disk_paths.txt"
@@ -819,7 +819,7 @@ main() {
     
     case "$command" in
         backup)
-            check_root
+            #check_root
             ensure_backup_dir
             
             local backup_all=false

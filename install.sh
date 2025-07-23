@@ -124,6 +124,7 @@ sudo pacman -S --needed --noconfirm celluloid # frontend for mpv
 sudo pacman -S --needed --noconfirm imv # image viewer
 sudo pacman -S --needed --noconfirm file-roller # Handling archive files
 sudo pacman -S --needed --noconfirm libxml2 # XML parsing library
+sudo pacman -S --needed --noconfirm pv # progress bar in terminal
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome || echo -e "${red}Failed to install google-chrome${no_color}" # Web browser

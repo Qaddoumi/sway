@@ -17,6 +17,11 @@ MIN_FREE_SPACE_MB=1024  # Minimum 1GB free space required
 VIRSH_TIMEOUT=300       # 5 minutes timeout for virsh commands
 SHUTDOWN_TIMEOUT=120    # 2 minutes timeout for VM shutdown
 
+PV_AVAILABLE=false
+if command -v pv &>/dev/null; then
+    PV_AVAILABLE=true
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -454,12 +459,25 @@ backup_vm() {
                 log "Backing up disk: $disk_name"
                 
                 local dest_file="$vm_backup_dir/$disk_name"
+                local disk_size=$(stat -c "%s" "$disk_path")
                 
-                # Use qemu-img convert for better compression and consistency
-                if ! qemu-img convert -O qcow2 -c "$disk_path" "$dest_file"; then
-                    error "Failed to backup disk image: $disk_path"
-                    release_vm_lock "$vm_name"
-                    return 1
+                if $PV_AVAILABLE; then
+                    # Use pv for nice progress bar if available
+                    log "Using pv for progress tracking..."
+                    if ! qemu-img convert -O qcow2 -c "$disk_path" - | \
+                        pv -s "$disk_size" -N "$disk_name" > "$dest_file"; then
+                        error "Failed to backup disk image: $disk_path"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
+                else
+                    # Fallback to basic progress if pv not available
+                    log "Starting backup (install 'pv' for better progress display)..."
+                    if ! qemu-img convert -O qcow2 -c -p "$disk_path" "$dest_file"; then
+                        error "Failed to backup disk image: $disk_path"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
                 fi
                 
                 # Validate the qemu-img operation
@@ -599,6 +617,7 @@ restore_vm() {
                 local backup_disk="${backup_disk_files[$((line_number-1))]}"
                 local target_dir
                 target_dir=$(dirname "$original_path")
+                local disk_size=$(stat -c "%s" "$backup_disk")
                 
                 # Create target directory if it doesn't exist
                 mkdir -p "$target_dir"
@@ -617,10 +636,21 @@ restore_vm() {
                     fi
                 fi
                 
-                if ! qemu-img convert "$backup_disk" "$original_path"; then
-                    error "Failed to restore disk image: $backup_disk"
-                    release_vm_lock "$vm_name"
-                    return 1
+                if $PV_AVAILABLE; then
+                    # Use pv for restore progress
+                    if ! pv -s "$disk_size" -N "$(basename "$backup_disk")" "$backup_disk" | \
+                        qemu-img convert -O qcow2 - "$original_path"; then
+                        error "Failed to restore disk image: $backup_disk"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
+                else
+                    # Fallback to basic restore
+                    if ! qemu-img convert "$backup_disk" "$original_path"; then
+                        error "Failed to restore disk image: $backup_disk"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
                 fi
                 
                 # Validate restored disk

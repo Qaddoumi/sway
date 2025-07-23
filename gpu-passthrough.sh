@@ -4,8 +4,6 @@
 # GPU PCI ID Identifier Script for VFIO Passthrough
 # This script identifies GPU PCI IDs and generates VFIO configuration
 
-username="${2:-$USER}"
-
 # Colors for better readability
 red='\033[0;31m'
 green='\033[0;32m'

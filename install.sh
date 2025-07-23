@@ -34,7 +34,6 @@ cd ~ || echo -e "${red}Failed to change directory to home${no_color}"
 
 echo -e "${green} ******************* Sway Installation Script ******************* ${no_color}"
 
-username="$USER"
 
 # Parse named arguments --login-manager
 login_manager=""
@@ -55,7 +54,7 @@ if [ -z "$login_manager" ]; then
     echo -e "${yellow}Login manager cannot be empty. will use the default: $login_manager${no_color}"
 fi
 echo -e "${green}Login manager to be used : $login_manager${no_color}"
-echo -e "${green}Username to be used      : $username${no_color}"
+echo -e "${green}Username to be used      : $USER${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

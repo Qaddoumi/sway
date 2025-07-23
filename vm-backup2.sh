@@ -8,7 +8,6 @@ set -euo pipefail
 # Configuration
 BACKUP_DIR="/home/$USER/backup_vms"
 LOG_DIR="$BACKUP_DIR/vm-logs"
-sudo mkdir -p $BACKUP_DIR $LOG_DIR
 LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
@@ -16,6 +15,10 @@ LOCK_DIR="/tmp/vm-backup-locks"
 MIN_FREE_SPACE_MB=1024  # Minimum 1GB free space required
 VIRSH_TIMEOUT=300       # 5 minutes timeout for virsh commands
 SHUTDOWN_TIMEOUT=120    # 2 minutes timeout for VM shutdown
+
+sudo mkdir -p $BACKUP_DIR $LOG_DIR $LOCK_DIR
+sudo chown -R $USER:$USER "$BACKUP_DIR"
+sudo chmod -R 755 "$BACKUP_DIR"
 
 PV_AVAILABLE=false
 if command -v pv &>/dev/null; then
@@ -135,7 +138,18 @@ estimate_vm_backup_size() {
     
     # Get disk images and their sizes
     local disk_images
-    disk_images=$(virsh domblklist "$vm_name" --details 2>/dev/null | awk '/^file.*disk/ {print $4}' || true)
+    disk_images=$(virsh_with_timeout "$VIRSH_TIMEOUT" domblklist "$vm_name" --details | awk '$1 == "file" && $2 == "disk" {print $4}' || true)
+
+    # Debug output
+    log "Found disk images for $vm_name:"
+    while IFS= read -r disk; do
+        log " - $disk"
+        if ! sudo test -f "$disk"; then
+            warning "Disk not found or inaccessible: $disk"
+        else
+            log "Disk size: $(sudo du -h "$disk" | cut -f1)"
+        fi
+    done <<< "$disk_images"
     
     if [[ -n "$disk_images" ]]; then
         while IFS= read -r disk_path; do
@@ -159,17 +173,22 @@ acquire_vm_lock() {
     local max_wait=30
     local wait_time=0
     
+    # Ensure lock directory exists and has correct permissions
+    sudo mkdir -p "$LOCK_DIR"
+    sudo chmod 1777 "$LOCK_DIR"  # Sticky bit to prevent deletion by others
+    
     while [[ $wait_time -lt $max_wait ]]; do
-        if (set -C; echo $$ > "$lock_file") 2>/dev/null; then
+        # Use sudo consistently for lock operations
+        if (set -C; sudo sh -c "echo $$ > '$lock_file'") 2>/dev/null; then
             LOCKED_VMS+=("$vm_name")
             log "Acquired lock for VM: $vm_name"
             return 0
         fi
         
-        if [[ -f "$lock_file" ]]; then
+        if sudo test -f "$lock_file"; then
             local lock_pid
-            lock_pid=$(cat "$lock_file" 2>/dev/null || echo "")
-            if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
+            lock_pid=$(sudo cat "$lock_file" 2>/dev/null || echo "")
+            if [[ -n "$lock_pid" ]] && ! sudo kill -0 "$lock_pid" 2>/dev/null; then
                 warning "Removing stale lock for VM: $vm_name"
                 sudo rm -f "$lock_file"
                 continue
@@ -189,7 +208,7 @@ release_vm_lock() {
     local vm_name="$1"
     local lock_file="$LOCK_DIR/${vm_name}.lock"
     
-    if [[ -f "$lock_file" ]]; then
+    if sudo test -f "$lock_file"; then
         sudo rm -f "$lock_file"
         # Remove from locked VMs array
         local new_array=()
@@ -301,8 +320,10 @@ validate_backup() {
     done
     
     # Validate XML configuration
-    if ! virsh define --validate "$backup_dir/${vm_name}.xml" --dry-run >/dev/null 2>&1; then
+    if ! sudo virsh define --validate "$backup_dir/${vm_name}.xml" >/dev/null 2>&1; then
         error "Invalid VM XML configuration in backup"
+        # Try to show validation errors
+        sudo virsh define --validate "$backup_dir/${vm_name}.xml" 2>&1 | log
         return 1
     fi
     
@@ -390,7 +411,7 @@ backup_vm() {
     fi
     
     # Create VM-specific backup directory
-    if ! mkdir -p "$vm_backup_dir"; then
+    if ! sudo mkdir -p "$vm_backup_dir"; then
         error "Failed to create backup directory: $vm_backup_dir"
         release_vm_lock "$vm_name"
         return 1
@@ -399,7 +420,8 @@ backup_vm() {
     # Get VM state
     local vm_state
     vm_state=$(get_vm_state "$vm_name")
-    echo "$vm_state" > "$vm_backup_dir/vm_state.txt"
+    #echo "$vm_state" > "$vm_backup_dir/vm_state.txt"
+    echo "$vm_state" | sudo tee -a "$vm_backup_dir/vm_state.txt" >/dev/null
     
     # Shutdown VM if running
     local was_running=false
@@ -432,7 +454,7 @@ backup_vm() {
     
     # Export VM configuration
     log "Exporting VM configuration..."
-    if ! virsh_with_timeout "$VIRSH_TIMEOUT" dumpxml "$vm_name" > "$vm_backup_dir/${vm_name}.xml"; then
+    if ! virsh_with_timeout "$VIRSH_TIMEOUT" dumpxml "$vm_name" | sudo tee -a "$vm_backup_dir/${vm_name}.xml" >/dev/null; then
         error "Failed to export VM configuration"
         release_vm_lock "$vm_name"
         return 1
@@ -441,12 +463,13 @@ backup_vm() {
     # Calculate checksum for XML
     local xml_checksum
     xml_checksum=$(calculate_checksum "$vm_backup_dir/${vm_name}.xml")
-    echo "$xml_checksum" > "$vm_backup_dir/${vm_name}.xml.md5"
+    #echo "$xml_checksum" > "$vm_backup_dir/${vm_name}.xml.md5"
+    echo "$xml_checksum" | sudo tee -a "$vm_backup_dir/${vm_name}.xml.md5" >/dev/null
     
     # Get disk images
     log "Finding disk images..."
     local disk_images
-    disk_images=$(virsh_with_timeout "$VIRSH_TIMEOUT" domblklist "$vm_name" --details | awk '/^file.*disk/ {print $4}')
+    disk_images=$(virsh_with_timeout "$VIRSH_TIMEOUT" domblklist "$vm_name" --details | awk '$1 == "file" && $2 == "disk" {print $4}')
     
     if [[ -z "$disk_images" ]]; then
         warning "No disk images found for VM $vm_name"
@@ -465,7 +488,7 @@ backup_vm() {
                     # Use pv for nice progress bar if available
                     log "Using pv for progress tracking..."
                     if ! sudo qemu-img convert -O qcow2 -c "$disk_path" - | \
-                        sudo pv -s "$disk_size" -N "$disk_name" > "$dest_file"; then
+                        sudo pv -s "$disk_size" -N "$disk_name" | sudo tee -a "$dest_file"; then
                         error "Failed to backup disk image: $disk_path"
                         release_vm_lock "$vm_name"
                         return 1
@@ -489,10 +512,12 @@ backup_vm() {
                 # Calculate and store checksum
                 local disk_checksum
                 disk_checksum=$(calculate_checksum "$dest_file")
-                echo "$disk_checksum" > "${dest_file}.md5"
+                #echo "$disk_checksum" > "${dest_file}.md5"
+                echo "$disk_checksum" | sudo tee -a "${dest_file}.md5" >/dev/null
                 
                 # Store original disk path for restore
-                echo "$disk_path" >> "$vm_backup_dir/disk_paths.txt"
+                #echo "$disk_path" >> "$vm_backup_dir/disk_paths.txt"
+                echo "$disk_path" | sudo tee -a "$vm_backup_dir/disk_paths.txt" >/dev/null
             else
                 warning "Disk image not found: $disk_path"
             fi
@@ -501,10 +526,10 @@ backup_vm() {
     
     # Backup snapshots list
     log "Exporting snapshots..."
-    virsh_with_timeout "$VIRSH_TIMEOUT" snapshot-list "$vm_name" --name 2>/dev/null > "$vm_backup_dir/snapshots.txt" || true
+    virsh_with_timeout "$VIRSH_TIMEOUT" snapshot-list "$vm_name" --name 2>/dev/null | sudo tee -a "$vm_backup_dir/snapshots.txt" || true
     
     # Create backup manifest with checksums
-    cat > "$vm_backup_dir/backup_manifest.txt" << EOF
+    sudo tee "$vm_backup_dir/backup_manifest.txt" > /dev/null << EOF
 VM Name: $vm_name
 Backup Date: $(date)
 Original State: $vm_state

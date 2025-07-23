@@ -7,6 +7,8 @@ set -euo pipefail
 
 # Configuration
 BACKUP_DIR="/backup/vms"
+LOG_DIR="$BACKUP_DIR/vm-logs"
+LOG_FILE="log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
 LOCK_DIR="/tmp/vm-backup-locks"
@@ -45,21 +47,43 @@ cleanup() {
 # Set up signal handlers
 trap cleanup EXIT INT TERM
 
+# Notification function
+notify() {
+    local title="$1"
+    local message="$2"
+    if command -v notify-send &>/dev/null; then
+        notify-send -t 5000 "$title" "$message"
+    fi
+}
+
 # Logging function
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+    local log_data="[$(date '+%Y-%m-%d %H:%M:%S')] - $1"
+    # Save the log into a file .
+    if ! echo "$log_data" >> "$LOG_FILE"; then
+        echo "Failed to write to log file: $LOG_FILE" >&2
+    fi
 }
 
 error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
+    local msg="$1"
+    log "ERROR: $msg"
+    notify "VM Backup Error" "$msg"
+    echo -e "${RED}[ERROR]${NC} $msg" >&2
 }
 
 success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    local msg="$1"
+    log "SUCCESS: $msg"
+    notify "VM Backup Success" "$msg"
+    echo -e "${GREEN}[SUCCESS]${NC} $msg"
 }
 
 warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    local msg="$1"
+    log "WARNING: $msg"
+    notify "VM Backup Warning" "$msg"
+    echo -e "${YELLOW}[WARNING]${NC} $msg"
 }
 
 # Check if running as root
@@ -74,11 +98,11 @@ check_root() {
 ensure_backup_dir() {
     if [[ ! -d "$BACKUP_DIR" ]]; then
         log "Creating backup directory: $BACKUP_DIR"
-        mkdir -p "$BACKUP_DIR"
+        sudo mkdir -p "$BACKUP_DIR"
     fi
     
     # Ensure lock directory exists
-    mkdir -p "$LOCK_DIR"
+    sudo mkdir -p "$LOCK_DIR"
 }
 
 # Check available disk space

@@ -8,7 +8,7 @@ set -euo pipefail
 # Configuration
 BACKUP_DIR="/home/$USER/backup_vms"
 LOG_DIR="$BACKUP_DIR/vm-logs"
-sudo mkdir -p $BACKUP_DIR $LOG_DIR
+mkdir -p $BACKUP_DIR $LOG_DIR
 LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
@@ -104,11 +104,11 @@ check_root() {
 ensure_backup_dir() {
     if [[ ! -d "$BACKUP_DIR" ]]; then
         log "Creating backup directory: $BACKUP_DIR"
-        sudo mkdir -p "$BACKUP_DIR"
+        mkdir -p "$BACKUP_DIR"
     fi
     
     # Ensure lock directory exists
-    sudo mkdir -p "$LOCK_DIR"
+    mkdir -p "$LOCK_DIR"
 }
 
 # Check available disk space

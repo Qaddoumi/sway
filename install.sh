@@ -14,11 +14,11 @@ yellow='\033[1;33m'
 blue='\033[0;34m'
 no_color='\033[0m' # rest the color to default
 
-# Check if running as root
-if [[ $EUID -eq 0 ]]; then
-   echo -e "${red}This script should not be run as root. Please run as a regular user with sudo privileges.${no_color}"
-   exit 1
-fi
+# # Check if running as root
+# if [[ $EUID -eq 0 ]]; then
+#    echo -e "${red}This script should not be run as root. Please run as a regular user with sudo privileges.${no_color}"
+#    exit 1
+# fi
 
 backup_file() {
     local file="$1"

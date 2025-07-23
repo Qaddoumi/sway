@@ -6,9 +6,10 @@
 set -euo pipefail
 
 # Configuration
-BACKUP_DIR="/backup/vms"
+BACKUP_DIR="/home/$USER/backup_vms"
 LOG_DIR="$BACKUP_DIR/vm-logs"
-LOG_FILE="log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
+sudo mkdir -p $BACKUP_DIR $LOG_DIR
+LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
 LOCK_DIR="/tmp/vm-backup-locks"

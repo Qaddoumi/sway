@@ -6,7 +6,13 @@
 set -euo pipefail
 
 # Configuration
-BACKUP_DIR="/home/$USER/backup_vms"
+if [[ $EUID -eq 0 ]]; then
+    # If running as root, use the original user's home
+    ACTUAL_USER=${SUDO_USER:-$USER}
+    BACKUP_DIR="/home/$ACTUAL_USER/backup_vms"
+else
+    BACKUP_DIR="/home/$USER/backup_vms"
+fi
 LOG_DIR="$BACKUP_DIR/vm-logs"
 LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
@@ -16,14 +22,17 @@ MIN_FREE_SPACE_MB=1024  # Minimum 1GB free space required
 VIRSH_TIMEOUT=300       # 5 minutes timeout for virsh commands
 SHUTDOWN_TIMEOUT=120    # 2 minutes timeout for VM shutdown
 
-sudo mkdir -p $BACKUP_DIR $LOG_DIR $LOCK_DIR
-sudo chown -R $USER:$USER "$BACKUP_DIR"
-sudo chmod -R 755 "$BACKUP_DIR"
-
-PV_AVAILABLE=false
-if command -v pv &>/dev/null; then
-    PV_AVAILABLE=true
+if [[ $EUID -eq 0 ]]; then
+    ACTUAL_USER=${SUDO_USER:-$USER}
+    ACTUAL_GROUP=$(id -gn "$ACTUAL_USER")
+else
+    ACTUAL_USER=$USER
+    ACTUAL_GROUP=$(id -gn)
 fi
+
+sudo mkdir -p "$BACKUP_DIR" "$LOG_DIR" "$LOCK_DIR"
+sudo chown -R "$ACTUAL_USER:$ACTUAL_GROUP" "$BACKUP_DIR"
+sudo chmod -R 755 "$BACKUP_DIR"
 
 # Colors for output
 RED='\033[0;31m'
@@ -60,17 +69,22 @@ trap cleanup EXIT INT TERM
 notify() {
     local title="$1"
     local message="$2"
-    if command -v notify-send &>/dev/null; then
-        notify-send -t 5000 "$title" "$message"
-    fi
+    # if command -v notify-send &>/dev/null; then
+    #     notify-send -t 5000 "$title" "$message"
+    # fi
 }
 
 # Logging function
 log() {
     local log_data="[$(date '+%Y-%m-%d %H:%M:%S')] - $1"
-    # Save the log into a file .
-    if ! echo "$log_data" | sudo tee -a "$LOG_FILE" >/dev/null; then
-        echo "Failed to write to log file: $LOG_FILE" >&2
+    # Save the log into a file with proper permissions
+    if ! echo "$log_data" | sudo tee -a "$LOG_FILE" >/dev/null 2>&1; then
+        # If tee fails, try to create the log file with proper permissions
+        sudo touch "$LOG_FILE" 2>/dev/null || true
+        sudo chown "$ACTUAL_USER:$ACTUAL_GROUP" "$LOG_FILE" 2>/dev/null || true
+        sudo chmod 644 "$LOG_FILE" 2>/dev/null || true
+        echo "$log_data" | sudo tee -a "$LOG_FILE" >/dev/null 2>&1 || \
+            echo "Failed to write to log file: $LOG_FILE" >&2
     fi
 }
 
@@ -95,13 +109,19 @@ warning() {
     echo -e "${YELLOW}[WARNING]${NC} $msg"
 }
 
-# # Check if running as root
-# check_root() {
-#     if [[ $EUID -ne 0 ]]; then
-#         error "This script must be run as root (use sudo)"
-#         exit 1
-#     fi
-# }
+info() {
+    local msg="$1"
+    log "INFO: $msg"
+    echo -e "${BLUE}[INFO]${NC} $msg"
+}
+
+# Check if running as root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        error "This script must be run as root (use sudo)"
+        exit 1
+    fi
+}
 
 # Create backup directory if it doesn't exist
 ensure_backup_dir() {
@@ -143,23 +163,18 @@ estimate_vm_backup_size() {
     # Debug output
     log "Found disk images for $vm_name:"
     while IFS= read -r disk; do
-        log " - $disk"
-        if ! sudo test -f "$disk"; then
-            warning "Disk not found or inaccessible: $disk"
-        else
-            log "Disk size: $(sudo du -h "$disk" | cut -f1)"
+        if [[ -n "$disk" ]]; then
+            log " - $disk"
+            if ! sudo test -f "$disk"; then
+                warning "Disk not found or inaccessible: $disk"
+            else
+                local disk_size_human=$(sudo du -h "$disk" | cut -f1)
+                local disk_size_mb=$(sudo du -m "$disk" | cut -f1)
+                log "Disk size: $disk_size_human (${disk_size_mb}MB)"
+                total_size_mb=$((total_size_mb + disk_size_mb))
+            fi
         fi
     done <<< "$disk_images"
-    
-    if [[ -n "$disk_images" ]]; then
-        while IFS= read -r disk_path; do
-            if [[ -f "$disk_path" ]]; then
-                local size_mb
-                size_mb=$(du -m "$disk_path" | cut -f1)
-                total_size_mb=$((total_size_mb + size_mb))
-            fi
-        done <<< "$disk_images"
-    fi
     
     # Add 20% overhead for compression variations and metadata
     total_size_mb=$((total_size_mb * 120 / 100))
@@ -269,32 +284,103 @@ verify_file_integrity() {
     return 0
 }
 
-# Validate qemu-img operation
-validate_qemu_img_operation() {
-    local source_file="$1"
+# Improved disk backup function with better error handling
+backup_disk_image() {
+    local source_disk="$1"
     local dest_file="$2"
+    local disk_name="$3"
     
-    # Check if destination file was created
-    if [[ ! -f "$dest_file" ]]; then
-        error "qemu-img failed to create destination file: $dest_file"
+    info "Starting backup of disk: $disk_name"
+    info "Source: $source_disk"
+    info "Destination: $dest_file"
+    
+    # Check source disk accessibility and get info
+    if ! sudo test -r "$source_disk"; then
+        error "Cannot read source disk: $source_disk"
         return 1
     fi
     
-    # Check if destination file has reasonable size (at least 1MB)
+    # Get source disk info
+    local disk_info
+    if ! disk_info=$(sudo qemu-img info "$source_disk" 2>&1); then
+        error "Failed to get disk info for $source_disk"
+        error "qemu-img info output: $disk_info"
+        return 1
+    fi
+    
+    log "Source disk info: $disk_info"
+    
+    local disk_size
+    disk_size=$(sudo stat -c "%s" "$source_disk")
+    info "Source disk size: $disk_size bytes ($(numfmt --to=iec-i --suffix=B "$disk_size"))"
+    
+    # Test qemu-img convert first with verbose output
+    info "Testing qemu-img convert compatibility..."
+    local test_output
+    if ! test_output=$(sudo qemu-img convert --help 2>&1); then
+        error "qemu-img convert not available: $test_output"
+        return 1
+    fi
+    
+    # Perform the backup with better error handling
+    local convert_cmd=(sudo qemu-img convert -O qcow2 -c -p "$source_disk" "$dest_file")
+    
+    info "Converting disk image ..."
+    local convert_output
+    if ! convert_output=$("${convert_cmd[@]}" 2>&1); then
+        error "qemu-img convert failed: $convert_output"
+        
+        # Check if partial file was created
+        if sudo test -f "$dest_file"; then
+            local partial_size
+            partial_size=$(sudo stat -c "%s" "$dest_file" 2>/dev/null || echo "0")
+            error "Partial file created with size: $partial_size bytes"
+            sudo rm -f "$dest_file"
+        fi
+        return 1
+    fi
+
+    if [[ -n "$convert_output" ]]; then
+        log "qemu-img convert output: $convert_output"
+    fi
+    
+    # Validate the converted file
+    if ! sudo test -f "$dest_file"; then
+        error "Destination file was not created: $dest_file"
+        return 1
+    fi
+    
     local dest_size
-    dest_size=$(stat -f%z "$dest_file" 2>/dev/null || stat -c%s "$dest_file" 2>/dev/null || echo "0")
+    dest_size=$(sudo stat -c "%s" "$dest_file")
+    info "Destination file size: $dest_size bytes ($(numfmt --to=iec-i --suffix=B "$dest_size"))"
+    
+    # Check if destination file has reasonable size (at least 1MB)
     if [[ $dest_size -lt 1048576 ]]; then
         error "Destination file suspiciously small: $dest_file ($dest_size bytes)"
+        sudo rm -f "$dest_file"
         return 1
     fi
     
     # Verify the image format
-    if ! sudo qemu-img info "$dest_file" >/dev/null 2>&1; then
+    local dest_info
+    if ! dest_info=$(sudo qemu-img info "$dest_file" 2>&1); then
         error "qemu-img info failed on destination file: $dest_file"
+        error "Error output: $dest_info"
+        sudo rm -f "$dest_file"
         return 1
     fi
     
-    log "qemu-img operation validation passed for: $dest_file"
+    log "Destination disk info: $dest_info"
+    success "Disk backup completed successfully: $disk_name"
+    return 0
+}
+
+# Validate qemu-img operation (simplified since we have better backup function)
+validate_qemu_img_operation() {
+    local source_file="$1"
+    local dest_file="$2"
+    
+    # This is now redundant as backup_disk_image does comprehensive validation
     return 0
 }
 
@@ -405,6 +491,8 @@ backup_vm() {
     estimated_size_mb=$(estimate_vm_backup_size "$vm_name")
     local required_space_mb=$((estimated_size_mb + MIN_FREE_SPACE_MB))
     
+    info "Estimated backup size: ${estimated_size_mb}MB"
+    
     if ! check_disk_space "$BACKUP_DIR" "$required_space_mb"; then
         release_vm_lock "$vm_name"
         return 1
@@ -420,8 +508,7 @@ backup_vm() {
     # Get VM state
     local vm_state
     vm_state=$(get_vm_state "$vm_name")
-    #echo "$vm_state" > "$vm_backup_dir/vm_state.txt"
-    echo "$vm_state" | sudo tee -a "$vm_backup_dir/vm_state.txt" >/dev/null
+    echo "$vm_state" | sudo tee "$vm_backup_dir/vm_state.txt" >/dev/null
     
     # Shutdown VM if running
     local was_running=false
@@ -437,6 +524,7 @@ backup_vm() {
         # Wait for shutdown with timeout
         local timeout=$SHUTDOWN_TIMEOUT
         while [[ $timeout -gt 0 ]] && [[ $(get_vm_state "$vm_name") == "running" ]]; do
+            info "Waiting for VM shutdown... (${timeout}s remaining)"
             sleep 2
             ((timeout-=2))
         done
@@ -450,11 +538,13 @@ backup_vm() {
             fi
             sleep 5
         fi
+        
+        success "VM successfully stopped"
     fi
     
     # Export VM configuration
     log "Exporting VM configuration..."
-    if ! virsh_with_timeout "$VIRSH_TIMEOUT" dumpxml "$vm_name" | sudo tee -a "$vm_backup_dir/${vm_name}.xml" >/dev/null; then
+    if ! virsh_with_timeout "$VIRSH_TIMEOUT" dumpxml "$vm_name" | sudo tee "$vm_backup_dir/${vm_name}.xml" >/dev/null; then
         error "Failed to export VM configuration"
         release_vm_lock "$vm_name"
         return 1
@@ -463,8 +553,7 @@ backup_vm() {
     # Calculate checksum for XML
     local xml_checksum
     xml_checksum=$(calculate_checksum "$vm_backup_dir/${vm_name}.xml")
-    #echo "$xml_checksum" > "$vm_backup_dir/${vm_name}.xml.md5"
-    echo "$xml_checksum" | sudo tee -a "$vm_backup_dir/${vm_name}.xml.md5" >/dev/null
+    echo "$xml_checksum" | sudo tee "$vm_backup_dir/${vm_name}.xml.md5" >/dev/null
     
     # Get disk images
     log "Finding disk images..."
@@ -474,37 +563,16 @@ backup_vm() {
     if [[ -z "$disk_images" ]]; then
         warning "No disk images found for VM $vm_name"
     else
-        # Backup each disk image
+        # Backup each disk image using improved function
         while IFS= read -r disk_path; do
-            if [[ -f "$disk_path" ]]; then
+            if [[ -n "$disk_path" && -f "$disk_path" ]]; then
                 local disk_name
                 disk_name=$(basename "$disk_path")
-                log "Backing up disk: $disk_name"
-                
                 local dest_file="$vm_backup_dir/$disk_name"
-                local disk_size=$(stat -c "%s" "$disk_path")
                 
-                if $PV_AVAILABLE; then
-                    # Use pv for nice progress bar if available
-                    log "Using pv for progress tracking..."
-                    if ! sudo qemu-img convert -O qcow2 -c "$disk_path" - | \
-                        sudo pv -s "$disk_size" -N "$disk_name" | sudo tee -a "$dest_file"; then
-                        error "Failed to backup disk image: $disk_path"
-                        release_vm_lock "$vm_name"
-                        return 1
-                    fi
-                else
-                    # Fallback to basic progress if pv not available
-                    log "Starting backup (install 'pv' for better progress display)..."
-                    if ! sudo qemu-img convert -O qcow2 -c -p "$disk_path" "$dest_file"; then
-                        error "Failed to backup disk image: $disk_path"
-                        release_vm_lock "$vm_name"
-                        return 1
-                    fi
-                fi
-                
-                # Validate the qemu-img operation
-                if ! validate_qemu_img_operation "$disk_path" "$dest_file"; then
+                # Use improved backup function
+                if ! backup_disk_image "$disk_path" "$dest_file" "$disk_name"; then
+                    error "Failed to backup disk image: $disk_path"
                     release_vm_lock "$vm_name"
                     return 1
                 fi
@@ -512,21 +580,21 @@ backup_vm() {
                 # Calculate and store checksum
                 local disk_checksum
                 disk_checksum=$(calculate_checksum "$dest_file")
-                #echo "$disk_checksum" > "${dest_file}.md5"
-                echo "$disk_checksum" | sudo tee -a "${dest_file}.md5" >/dev/null
+                echo "$disk_checksum" | sudo tee "${dest_file}.md5" >/dev/null
                 
                 # Store original disk path for restore
-                #echo "$disk_path" >> "$vm_backup_dir/disk_paths.txt"
                 echo "$disk_path" | sudo tee -a "$vm_backup_dir/disk_paths.txt" >/dev/null
+                
+                success "Backed up disk: $disk_name"
             else
-                warning "Disk image not found: $disk_path"
+                warning "Disk image not found or empty path: $disk_path"
             fi
         done <<< "$disk_images"
     fi
     
     # Backup snapshots list
     log "Exporting snapshots..."
-    virsh_with_timeout "$VIRSH_TIMEOUT" snapshot-list "$vm_name" --name 2>/dev/null | sudo tee -a "$vm_backup_dir/snapshots.txt" || true
+    virsh_with_timeout "$VIRSH_TIMEOUT" snapshot-list "$vm_name" --name 2>/dev/null | sudo tee "$vm_backup_dir/snapshots.txt" >/dev/null || true
     
     # Create backup manifest with checksums
     sudo tee "$vm_backup_dir/backup_manifest.txt" > /dev/null << EOF
@@ -551,6 +619,8 @@ EOF
         log "Restarting VM $vm_name..."
         if ! virsh_with_timeout "$VIRSH_TIMEOUT" start "$vm_name"; then
             warning "Failed to restart VM $vm_name"
+        else
+            success "VM $vm_name restarted successfully"
         fi
     fi
     
@@ -642,7 +712,6 @@ restore_vm() {
                 local backup_disk="${backup_disk_files[$((line_number-1))]}"
                 local target_dir
                 target_dir=$(dirname "$original_path")
-                local disk_size=$(stat -c "%s" "$backup_disk")
                 
                 # Create target directory if it doesn't exist
                 sudo mkdir -p "$target_dir"
@@ -661,21 +730,11 @@ restore_vm() {
                     fi
                 fi
                 
-                if $PV_AVAILABLE; then
-                    # Use pv for restore progress
-                    if ! sudo pv -s "$disk_size" -N "$(basename "$backup_disk")" "$backup_disk" | \
-                        sudo qemu-img convert -O qcow2 - "$original_path"; then
-                        error "Failed to restore disk image: $backup_disk"
-                        release_vm_lock "$vm_name"
-                        return 1
-                    fi
-                else
-                    # Fallback to basic restore
-                    if ! sudo qemu-img convert "$backup_disk" "$original_path"; then
-                        error "Failed to restore disk image: $backup_disk"
-                        release_vm_lock "$vm_name"
-                        return 1
-                    fi
+                log "Restoring $(basename "$backup_disk") to $original_path"
+                if ! sudo qemu-img convert -p "$backup_disk" "$original_path"; then
+                    error "Failed to restore disk image: $backup_disk"
+                    release_vm_lock "$vm_name"
+                    return 1
                 fi
                 
                 # Validate restored disk
@@ -897,7 +956,7 @@ main() {
             ;;
             
         restore)
-            check_root
+            #check_root
             
             if [[ $# -lt 2 ]]; then
                 error "Please specify VM name and backup path"

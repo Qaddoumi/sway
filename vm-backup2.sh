@@ -51,13 +51,18 @@ cleanup() {
     
     if [[ -n "$CURRENT_BACKUP_DIR" && -d "$CURRENT_BACKUP_DIR" ]]; then
         warning "Cleaning up partial backup: $CURRENT_BACKUP_DIR"
-        sudo rm -rf "$CURRENT_BACKUP_DIR"
+        sudo rm -rf "$CURRENT_BACKUP_DIR" 2>/dev/null || true
     fi
     
-    # Release all locks
+    # Release all locks with error handling
     for vm in "${LOCKED_VMS[@]}"; do
-        release_vm_lock "$vm" 2>/dev/null || true
+        if [[ -n "$vm" ]]; then
+            release_vm_lock "$vm" 2>/dev/null || true
+        fi
     done
+    
+    # Clear the array
+    LOCKED_VMS=()
     
     exit $exit_code
 }
@@ -177,7 +182,11 @@ estimate_vm_backup_size() {
     done <<< "$disk_images"
     
     # Add 20% overhead for compression variations and metadata
-    total_size_mb=$((total_size_mb * 120 / 100))
+    if [[ $total_size_mb -gt 0 ]]; then
+        total_size_mb=$((total_size_mb * 120 / 100))
+    else
+        total_size_mb=100  # Minimum estimated size
+    fi
     echo "$total_size_mb"
 }
 
@@ -704,7 +713,7 @@ restore_vm() {
             local backup_disk_files
             backup_disk_files=($(find "$backup_path" -name "*.qcow2" -o -name "*.img" -o -name "*.raw"))
             
-            if [[ ${#backup_disk_files[@]} -ge $line_number ]]; then
+            if [[ $line_number -le ${#backup_disk_files[@]} && -n "${backup_disk_files[$((line_number-1))]:-}" ]]; then
                 local backup_disk="${backup_disk_files[$((line_number-1))]}"
                 local target_dir
                 target_dir=$(dirname "$original_path")

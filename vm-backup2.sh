@@ -326,9 +326,9 @@ backup_disk_image() {
     local convert_cmd=(sudo qemu-img convert -O qcow2 -c -p "$source_disk" "$dest_file")
     
     info "Converting disk image ..."
-    local convert_output
-    if ! convert_output=$("${convert_cmd[@]}" 2>&1); then
-        error "qemu-img convert failed: $convert_output"
+    if ! "${convert_cmd[@]}" 2>&1 | tee >(sudo tee -a "$LOG_FILE" >/dev/null); then
+        local exit_code=$?
+        error "qemu-img convert failed with exit code: $exit_code"
         
         # Check if partial file was created
         if sudo test -f "$dest_file"; then
@@ -338,10 +338,6 @@ backup_disk_image() {
             sudo rm -f "$dest_file"
         fi
         return 1
-    fi
-
-    if [[ -n "$convert_output" ]]; then
-        log "qemu-img convert output: $convert_output"
     fi
     
     # Validate the converted file
@@ -730,8 +726,7 @@ restore_vm() {
                     fi
                 fi
                 
-                log "Restoring $(basename "$backup_disk") to $original_path"
-                if ! sudo qemu-img convert -p "$backup_disk" "$original_path"; then
+                if ! sudo qemu-img convert -p "$backup_disk" "$original_path" 2>&1 | tee >(sudo tee -a "$LOG_FILE" >/dev/null); then
                     error "Failed to restore disk image: $backup_disk"
                     release_vm_lock "$vm_name"
                     return 1

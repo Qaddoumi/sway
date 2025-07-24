@@ -873,13 +873,23 @@ EOF
 }
 
 # Main script logic
-main() {
+mmain() {
     local command="${1:-}"
+    local start_time=0
+    local should_time=false
     
     if [[ $# -eq 0 ]]; then
         show_usage
         exit 1
     fi
+    
+    # Check if we should time the operation (backup or restore)
+    case "$command" in
+        backup|restore)
+            should_time=true
+            start_time=$(date +%s)
+            ;;
+    esac
     
     # Parse global options
     while [[ $# -gt 0 ]]; do
@@ -1002,6 +1012,28 @@ main() {
             exit 1
             ;;
     esac
+    
+    # Print elapsed time if we timed the operation
+    if [[ "$should_time" == true ]]; then
+        local end_time=$(date +%s)
+        local elapsed_time=$((end_time - start_time))
+        
+        # Convert seconds to human readable format
+        local hours=$((elapsed_time / 3600))
+        local minutes=$(( (elapsed_time % 3600) / 60 ))
+        local seconds=$((elapsed_time % 60))
+        
+        local time_str=""
+        if [[ $hours -gt 0 ]]; then
+            time_str+="${hours}h "
+        fi
+        if [[ $minutes -gt 0 || $hours -gt 0 ]]; then
+            time_str+="${minutes}m "
+        fi
+        time_str+="${seconds}s"
+        
+        success "Operation completed in ${time_str}"
+    fi
 }
 
 # Run main function with all arguments

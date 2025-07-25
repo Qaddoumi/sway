@@ -347,7 +347,7 @@ backup_disk_with_gzip() {
     
     # Use dd with sparse handling and pipe to gzip
     info "Compressing with gzip (level $COMPRESSION_LEVEL)..."
-    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+    if ! sudo dd if="$temp_raw" bs=1M status=progress | \
          gzip -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
         error "Failed to compress with gzip"
         sudo rm -f "$temp_raw" "$final_file"
@@ -386,7 +386,7 @@ backup_disk_with_xz() {
     fi
     
     info "Compressing with xz (level $COMPRESSION_LEVEL)..."
-    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+    if ! sudo dd if="$temp_raw" bs=1M status=progress | \
          xz -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
         error "Failed to compress with xz"
         sudo rm -f "$temp_raw" "$final_file"
@@ -429,7 +429,7 @@ backup_disk_with_zstd() {
     fi
     
     info "Compressing with zstd (level $COMPRESSION_LEVEL)..."
-    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+    if ! sudo dd if="$temp_raw" bs=1M status=progress | \
          zstd -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
         error "Failed to compress with zstd"
         sudo rm -f "$temp_raw" "$final_file"

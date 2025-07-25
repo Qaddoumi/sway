@@ -873,7 +873,7 @@ EOF
 }
 
 # Main script logic
-mmain() {
+main() {
     local command="${1:-}"
     local start_time=0
     local should_time=false

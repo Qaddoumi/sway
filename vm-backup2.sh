@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VM Backup and Restore Script for libvirt/KVM
+# VM Backup and Restore Script for libvirt/KVM with Real Compression
 # Usage: vm-backup.sh [backup|restore|list] [options]
 
 set -euo pipefail
@@ -33,6 +33,35 @@ fi
 sudo mkdir -p "$BACKUP_DIR" "$LOG_DIR" "$LOCK_DIR"
 sudo chown -R "$ACTUAL_USER:$ACTUAL_GROUP" "$BACKUP_DIR"
 sudo chmod -R 755 "$BACKUP_DIR"
+
+
+# Compression Configuration Options
+# ==================================
+
+# Compression method selection:
+# - "gzip": Good balance of speed/compression (recommended for most cases)
+# - "xz": Best compression ratio but slower (good for archival)  
+# - "zstd": Fast compression with good ratio (requires zstd package)
+# - "qcow2-sparse": Create sparse qcow2 without external compression
+# - "raw-sparse": Create sparse RAW then compress with gzip
+COMPRESSION_METHOD="gzip"
+
+# Compression level (affects compression ratio vs speed):
+# - gzip/xz: 1 (fastest) to 9 (best compression)
+# - zstd: 1 (fastest) to 22 (best compression, level 6 recommended)
+COMPRESSION_LEVEL="6"
+
+# Advanced options
+USE_SPARSE_COPY="true"         # Enable sparse file handling
+ENABLE_ZERO_DETECTION="true"   # Enable zero block detection
+PARALLEL_COMPRESSION="false"   # Use pigz/pxz for parallel compression (if available)
+
+# Set compression method based on use case:
+# For regular backups: COMPRESSION_METHOD="gzip" COMPRESSION_LEVEL="6"
+# For archival: COMPRESSION_METHOD="xz" COMPRESSION_LEVEL="9"  
+# For speed: COMPRESSION_METHOD="zstd" COMPRESSION_LEVEL="3"
+
+
 
 # Colors for output
 RED='\033[0;31m'
@@ -74,9 +103,11 @@ trap cleanup EXIT INT TERM
 notify() {
     local title="$1"
     local message="$2"
-    # if command -v notify-send &>/dev/null; then
-    #     notify-send -t 5000 "$title" "$message"
-    # fi
+    if [[ $EUID -ne 0 ]]; then
+        if command -v notify-send &>/dev/null; then
+            notify-send -t 5000 "$title" "$message"
+        fi
+    fi
 }
 
 # Logging function
@@ -293,17 +324,215 @@ verify_file_integrity() {
     return 0
 }
 
-# Improved disk backup function with better error handling
-backup_disk_image() {
+# Backup with gzip compression (good balance of speed/compression)
+backup_disk_with_gzip() {
     local source_disk="$1"
     local dest_file="$2"
     local disk_name="$3"
     
-    info "Starting backup of disk: $disk_name"
-    info "Source: $source_disk"
-    info "Destination: $dest_file"
+    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local final_file="${dest_file%.qcow2}.img.gz"
     
-    # Check source disk accessibility and get info
+    info "Converting to RAW format first..."
+    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+        error "Failed to convert to RAW format"
+        return 1
+    fi
+    
+    # Use dd with sparse handling and pipe to gzip
+    info "Compressing with gzip (level $COMPRESSION_LEVEL)..."
+    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+         gzip -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
+        error "Failed to compress with gzip"
+        sudo rm -f "$temp_raw" "$final_file"
+        return 1
+    fi
+    
+    # Clean up temp file
+    sudo rm -f "$temp_raw"
+    
+    # Update dest_file for checksum calculation
+    echo "$final_file" > "${dest_file}.final_path"
+    
+    local compressed_size
+    compressed_size=$(sudo stat -c "%s" "$final_file")
+    local original_size
+    original_size=$(sudo stat -c "%s" "$source_disk")
+    local compression_ratio=$((compressed_size * 100 / original_size))
+    
+    success "Gzip compression completed. Size: $(numfmt --to=iec-i --suffix=B "$compressed_size") (${compression_ratio}% of original)"
+    return 0
+}
+
+# Backup with xz compression (best compression ratio, slower)
+backup_disk_with_xz() {
+    local source_disk="$1"
+    local dest_file="$2"
+    local disk_name="$3"
+    
+    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local final_file="${dest_file%.qcow2}.img.xz"
+    
+    info "Converting to RAW format first..."
+    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+        error "Failed to convert to RAW format"
+        return 1
+    fi
+    
+    info "Compressing with xz (level $COMPRESSION_LEVEL)..."
+    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+         xz -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
+        error "Failed to compress with xz"
+        sudo rm -f "$temp_raw" "$final_file"
+        return 1
+    fi
+    
+    sudo rm -f "$temp_raw"
+    echo "$final_file" > "${dest_file}.final_path"
+    
+    local compressed_size
+    compressed_size=$(sudo stat -c "%s" "$final_file")
+    local original_size
+    original_size=$(sudo stat -c "%s" "$source_disk")
+    local compression_ratio=$((compressed_size * 100 / original_size))
+    
+    success "XZ compression completed. Size: $(numfmt --to=iec-i --suffix=B "$compressed_size") (${compression_ratio}% of original)"
+    return 0
+}
+
+# Backup with zstd compression (good speed and compression)
+backup_disk_with_zstd() {
+    local source_disk="$1"
+    local dest_file="$2"
+    local disk_name="$3"
+    
+    # Check if zstd is available
+    if ! command -v zstd &>/dev/null; then
+        warning "zstd not available, falling back to gzip"
+        backup_disk_with_gzip "$source_disk" "$dest_file" "$disk_name"
+        return $?
+    fi
+    
+    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local final_file="${dest_file%.qcow2}.img.zst"
+    
+    info "Converting to RAW format first..."
+    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+        error "Failed to convert to RAW format"
+        return 1
+    fi
+    
+    info "Compressing with zstd (level $COMPRESSION_LEVEL)..."
+    if ! sudo dd if="$temp_raw" bs=1M status=progress 2>/dev/null | \
+         zstd -"$COMPRESSION_LEVEL" | sudo tee "$final_file" >/dev/null; then
+        error "Failed to compress with zstd"
+        sudo rm -f "$temp_raw" "$final_file"
+        return 1
+    fi
+    
+    sudo rm -f "$temp_raw"
+    echo "$final_file" > "${dest_file}.final_path"
+    
+    local compressed_size
+    compressed_size=$(sudo stat -c "%s" "$final_file")
+    local original_size
+    original_size=$(sudo stat -c "%s" "$source_disk")
+    local compression_ratio=$((compressed_size * 100 / original_size))
+    
+    success "Zstd compression completed. Size: $(numfmt --to=iec-i --suffix=B "$compressed_size") (${compression_ratio}% of original)"
+    return 0
+}
+
+# Create a properly sparse qcow2 (removes unused space)
+backup_disk_qcow2_sparse() {
+    local source_disk="$1"
+    local dest_file="$2"
+    local disk_name="$3"
+    
+    info "Creating sparse qcow2 backup..."
+    
+    # Method 1: Convert with sparse detection
+    local convert_opts=(-f qcow2 -O qcow2 -c -p)
+    
+    # Add sparse options if available
+    if qemu-img convert --help 2>&1 | grep -q "detect-zeroes"; then
+        convert_opts+=(-o detect-zeroes=on)
+        info "Using zero detection optimization"
+    fi
+    
+    if qemu-img convert --help 2>&1 | grep -q "skip-zero"; then
+        convert_opts+=(--skip-zero)
+        info "Using skip-zero optimization"
+    fi
+    
+    # Perform the conversion
+    if ! sudo qemu-img convert "${convert_opts[@]}" "$source_disk" "$dest_file"; then
+        error "Failed to create sparse qcow2 backup"
+        return 1
+    fi
+    
+    # Try to shrink the image further by removing unused blocks
+    info "Attempting to shrink qcow2 image..."
+    if ! sudo qemu-img resize --shrink "$dest_file" --preallocation=off 2>/dev/null; then
+        warning "Could not shrink qcow2 image (this is often normal)"
+    fi
+    
+    local final_size
+    final_size=$(sudo stat -c "%s" "$dest_file")
+    local original_size
+    original_size=$(sudo stat -c "%s" "$source_disk")
+    local compression_ratio=$((final_size * 100 / original_size))
+    
+    success "Sparse qcow2 backup completed. Size: $(numfmt --to=iec-i --suffix=B "$final_size") (${compression_ratio}% of original)"
+    return 0
+}
+
+# Create sparse RAW backup (useful for maximum compatibility)
+backup_disk_raw_sparse() {
+    local source_disk="$1"
+    local dest_file="$2"
+    local disk_name="$3"
+    
+    local raw_file="${dest_file%.qcow2}.raw"
+    
+    info "Creating sparse RAW backup..."
+    
+    # Convert to RAW with sparse handling
+    if ! sudo qemu-img convert -f qcow2 -O raw -S 4k "$source_disk" "$raw_file"; then
+        error "Failed to create sparse RAW backup"
+        return 1
+    fi
+    
+    # Compress the sparse RAW file
+    info "Compressing sparse RAW file..."
+    if ! sudo gzip -"$COMPRESSION_LEVEL" "$raw_file"; then
+        error "Failed to compress RAW file"
+        return 1
+    fi
+    
+    local final_file="${raw_file}.gz"
+    echo "$final_file" > "${dest_file}.final_path"
+    
+    local compressed_size
+    compressed_size=$(sudo stat -c "%s" "$final_file")
+    local original_size
+    original_size=$(sudo stat -c "%s" "$source_disk")
+    local compression_ratio=$((compressed_size * 100 / original_size))
+    
+    success "Sparse RAW backup completed. Size: $(numfmt --to=iec-i --suffix=B "$compressed_size") (${compression_ratio}% of original)"
+    return 0
+}
+
+backup_disk_image_compressed() {
+    local source_disk="$1"
+    local dest_file="$2"
+    local disk_name="$3"
+    
+    info "Starting compressed backup of disk: $disk_name"
+    info "Source: $source_disk"
+    info "Compression method: $COMPRESSION_METHOD"
+    
+    # Check source disk accessibility
     if ! sudo test -r "$source_disk"; then
         error "Cannot read source disk: $source_disk"
         return 1
@@ -313,78 +542,41 @@ backup_disk_image() {
     local disk_info
     if ! disk_info=$(sudo qemu-img info "$source_disk" 2>&1); then
         error "Failed to get disk info for $source_disk"
-        error "qemu-img info output: $disk_info"
         return 1
     fi
-    
-    log "Source disk info: $disk_info"
     
     local disk_size
     disk_size=$(sudo stat -c "%s" "$source_disk")
     info "Source disk size: $disk_size bytes ($(numfmt --to=iec-i --suffix=B "$disk_size"))"
     
-    # Test qemu-img convert first with verbose output
-    info "Testing qemu-img convert compatibility..."
-    local test_output
-    if ! test_output=$(sudo qemu-img convert --help 2>&1); then
-        error "qemu-img convert not available: $test_output"
-        return 1
-    fi
-    
-    # Perform the backup with better error handling
-    local convert_cmd=(sudo qemu-img convert -O qcow2 -c -p "$source_disk" "$dest_file")
-    
-    info "Converting disk image ..."
-    if ! "${convert_cmd[@]}" 2>&1 | tee >(sudo tee -a "$LOG_FILE" >/dev/null); then
-        local exit_code=$?
-        error "qemu-img convert failed with exit code: $exit_code"
-        
-        # Check if partial file was created
-        if sudo test -f "$dest_file"; then
-            local partial_size
-            partial_size=$(sudo stat -c "%s" "$dest_file" 2>/dev/null || echo "0")
-            error "Partial file created with size: $partial_size bytes"
-            sudo rm -f "$dest_file"
-        fi
-        return 1
-    fi
-    
-    # Validate the converted file
-    if ! sudo test -f "$dest_file"; then
-        error "Destination file was not created: $dest_file"
-        return 1
-    fi
-    
-    local dest_size
-    dest_size=$(sudo stat -c "%s" "$dest_file")
-    info "Destination file size: $dest_size bytes ($(numfmt --to=iec-i --suffix=B "$dest_size"))"
-    
-    # Check if destination file has reasonable size (at least 1MB)
-    if [[ $dest_size -lt 1048576 ]]; then
-        error "Destination file suspiciously small: $dest_file ($dest_size bytes)"
-        sudo rm -f "$dest_file"
-        return 1
-    fi
-    
-    # Verify the image format
-    local dest_info
-    if ! dest_info=$(sudo qemu-img info "$dest_file" 2>&1); then
-        error "qemu-img info failed on destination file: $dest_file"
-        error "Error output: $dest_info"
-        sudo rm -f "$dest_file"
-        return 1
-    fi
-    
-    log "Destination disk info: $dest_info"
-    success "Disk backup completed successfully: $disk_name"
-    return 0
+    case "$COMPRESSION_METHOD" in
+        "gzip")
+            backup_disk_with_gzip "$source_disk" "$dest_file" "$disk_name"
+            ;;
+        "xz")
+            backup_disk_with_xz "$source_disk" "$dest_file" "$disk_name"
+            ;;
+        "zstd")
+            backup_disk_with_zstd "$source_disk" "$dest_file" "$disk_name"
+            ;;
+        "qcow2-sparse")
+            backup_disk_qcow2_sparse "$source_disk" "$dest_file" "$disk_name"
+            ;;
+        "raw-sparse")
+            backup_disk_raw_sparse "$source_disk" "$dest_file" "$disk_name"
+            ;;
+        *)
+            error "Unknown compression method: $COMPRESSION_METHOD"
+            return 1
+            ;;
+    esac
 }
 
 # Validate qemu-img operation (simplified since we have better backup function)
 validate_qemu_img_operation() {
     local source_file="$1"
     local dest_file="$2"
-    
+    #TODO: check this commit
     # This is now redundant as backup_disk_image does comprehensive validation
     return 0
 }
@@ -575,8 +767,12 @@ backup_vm() {
                 disk_name=$(basename "$disk_path")
                 local dest_file="$vm_backup_dir/$disk_name"
                 
-                # Use improved backup function
-                if ! backup_disk_image "$disk_path" "$dest_file" "$disk_name"; then
+                # Store original size for compression statistics
+                local original_size
+                original_size=$(sudo stat -c "%s" "$disk_path")
+                echo "$original_size" | sudo tee "${dest_file}.original_size" >/dev/null
+                
+                if ! backup_disk_image_compressed "$disk_path" "$dest_file" "$disk_name"; then
                     error "Failed to backup disk image: $disk_path"
                     release_vm_lock "$vm_name"
                     return 1

@@ -4,7 +4,8 @@
 # Usage: vm-backup.sh [backup|restore|list] [options]
 
 set -euo pipefail
-set -x
+#TODO: remove set -x after debugging
+#set -x
 
 # Configuration
 if [[ $EUID -eq 0 ]]; then
@@ -47,12 +48,12 @@ sudo chmod -R 755 "$BACKUP_DIR"
 # - "zstd": Fast compression with good ratio (requires zstd package)
 # - "qcow2-sparse": Create sparse qcow2 without external compression
 # - "raw-sparse": Create sparse RAW then compress with gzip
-COMPRESSION_METHOD="qcow2-sparse"
+COMPRESSION_METHOD="gzip"
 
 # Compression level (affects compression ratio vs speed):
 # - gzip/xz: 1 (fastest) to 9 (best compression)
 # - zstd: 1 (fastest) to 22 (best compression, level 6 recommended)
-COMPRESSION_LEVEL="6"
+COMPRESSION_LEVEL="1"
 
 # Advanced options
 USE_SPARSE_COPY="true"         # Enable sparse file handling
@@ -102,8 +103,7 @@ cleanup() {
 }
 
 # Set up signal handlers
-# TODO: disable cleanup for debugging
-#trap cleanup EXIT INT TERM
+trap cleanup EXIT INT TERM
 
 # Notification function
 notify() {
@@ -340,7 +340,7 @@ backup_disk_with_gzip() {
     local final_file="${dest_file%.qcow2}.img.gz"
     
     info "Converting to RAW format first..."
-    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+    if ! sudo qemu-img convert -p -f qcow2 -O raw "$source_disk" "$temp_raw"; then
         error "Failed to convert to RAW format"
         return 1
     fi
@@ -380,7 +380,7 @@ backup_disk_with_xz() {
     local final_file="${dest_file%.qcow2}.img.xz"
     
     info "Converting to RAW format first..."
-    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+    if ! sudo qemu-img convert -p -f qcow2 -O raw "$source_disk" "$temp_raw"; then
         error "Failed to convert to RAW format"
         return 1
     fi
@@ -423,7 +423,7 @@ backup_disk_with_zstd() {
     local final_file="${dest_file%.qcow2}.img.zst"
     
     info "Converting to RAW format first..."
-    if ! sudo qemu-img convert -f qcow2 -O raw "$source_disk" "$temp_raw"; then
+    if ! sudo qemu-img convert -p -f qcow2 -O raw "$source_disk" "$temp_raw"; then
         error "Failed to convert to RAW format"
         return 1
     fi
@@ -472,7 +472,7 @@ backup_disk_qcow2_sparse() {
     fi
     
     # Perform the conversion
-    if ! sudo qemu-img convert "${convert_opts[@]}" "$source_disk" "$dest_file"; then
+    if ! sudo qemu-img convert -p "${convert_opts[@]}" "$source_disk" "$dest_file"; then
         error "Failed to create sparse qcow2 backup"
         return 1
     fi
@@ -504,7 +504,7 @@ backup_disk_raw_sparse() {
     info "Creating sparse RAW backup..."
     
     # Convert to RAW with sparse handling
-    if ! sudo qemu-img convert -f qcow2 -O raw -S 4k "$source_disk" "$raw_file"; then
+    if ! sudo qemu-img convert -p -f qcow2 -O raw -S 4k "$source_disk" "$raw_file"; then
         error "Failed to create sparse RAW backup"
         return 1
     fi

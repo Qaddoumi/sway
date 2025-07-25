@@ -4,20 +4,23 @@
 # Usage: vm-backup.sh [backup|restore|list] [options]
 
 set -euo pipefail
+set -x
 
 # Configuration
 if [[ $EUID -eq 0 ]]; then
     # If running as root, use the original user's home
     ACTUAL_USER=${SUDO_USER:-$USER}
     BACKUP_DIR="/home/$ACTUAL_USER/backup_vms"
+    TMP_DIR="/home/$ACTUAL_USER/mytmp"
 else
     BACKUP_DIR="/home/$USER/backup_vms"
+    TMP_DIR="/home/$USER/mytmp"
 fi
 LOG_DIR="$BACKUP_DIR/vm-logs"
 LOG_FILE="$LOG_DIR/log_$(date '+%Y-%m-%d_%H:%M:%S').txt"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 LIBVIRT_CONFIG_DIR="/etc/libvirt/qemu"
-LOCK_DIR="/tmp/vm-backup-locks"
+LOCK_DIR="$TMP_DIR/vm-backup-locks"
 MIN_FREE_SPACE_MB=1024  # Minimum 1GB free space required
 VIRSH_TIMEOUT=300       # 5 minutes timeout for virsh commands
 SHUTDOWN_TIMEOUT=120    # 2 minutes timeout for VM shutdown
@@ -30,7 +33,7 @@ else
     ACTUAL_GROUP=$(id -gn)
 fi
 
-sudo mkdir -p "$BACKUP_DIR" "$LOG_DIR" "$LOCK_DIR"
+sudo mkdir -p "$BACKUP_DIR" "$LOG_DIR" "$LOCK_DIR" "$TMP_DIR"
 sudo chown -R "$ACTUAL_USER:$ACTUAL_GROUP" "$BACKUP_DIR"
 sudo chmod -R 755 "$BACKUP_DIR"
 
@@ -40,11 +43,11 @@ sudo chmod -R 755 "$BACKUP_DIR"
 
 # Compression method selection:
 # - "gzip": Good balance of speed/compression (recommended for most cases)
-# - "xz": Best compression ratio but slower (good for archival)  
+# - "xz": Best compression ratio but slower (good for archival)
 # - "zstd": Fast compression with good ratio (requires zstd package)
 # - "qcow2-sparse": Create sparse qcow2 without external compression
 # - "raw-sparse": Create sparse RAW then compress with gzip
-COMPRESSION_METHOD="gzip"
+COMPRESSION_METHOD="qcow2-sparse"
 
 # Compression level (affects compression ratio vs speed):
 # - gzip/xz: 1 (fastest) to 9 (best compression)
@@ -89,6 +92,8 @@ cleanup() {
             release_vm_lock "$vm" 2>/dev/null || true
         fi
     done
+
+    sudo rm -rf "$TMP_DIR" 2>/dev/null || true
     
     # Clear the array
     LOCKED_VMS=()
@@ -97,7 +102,8 @@ cleanup() {
 }
 
 # Set up signal handlers
-trap cleanup EXIT INT TERM
+# TODO: disable cleanup for debugging
+#trap cleanup EXIT INT TERM
 
 # Notification function
 notify() {
@@ -330,7 +336,7 @@ backup_disk_with_gzip() {
     local dest_file="$2"
     local disk_name="$3"
     
-    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local temp_raw="$TMP_DIR/${disk_name}_temp.raw"
     local final_file="${dest_file%.qcow2}.img.gz"
     
     info "Converting to RAW format first..."
@@ -370,7 +376,7 @@ backup_disk_with_xz() {
     local dest_file="$2"
     local disk_name="$3"
     
-    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local temp_raw="$TMP_DIR/${disk_name}_temp.raw"
     local final_file="${dest_file%.qcow2}.img.xz"
     
     info "Converting to RAW format first..."
@@ -413,7 +419,7 @@ backup_disk_with_zstd() {
         return $?
     fi
     
-    local temp_raw="/tmp/${disk_name}_temp.raw"
+    local temp_raw="$TMP_DIR/${disk_name}_temp.raw"
     local final_file="${dest_file%.qcow2}.img.zst"
     
     info "Converting to RAW format first..."
@@ -455,12 +461,12 @@ backup_disk_qcow2_sparse() {
     local convert_opts=(-f qcow2 -O qcow2 -c -p)
     
     # Add sparse options if available
-    if qemu-img convert --help 2>&1 | grep -q "detect-zeroes"; then
+    if sudo qemu-img convert --help 2>&1 | grep -q "detect-zeroes"; then
         convert_opts+=(-o detect-zeroes=on)
         info "Using zero detection optimization"
     fi
     
-    if qemu-img convert --help 2>&1 | grep -q "skip-zero"; then
+    if sudo qemu-img convert --help 2>&1 | grep -q "skip-zero"; then
         convert_opts+=(--skip-zero)
         info "Using skip-zero optimization"
     fi
@@ -778,9 +784,16 @@ backup_vm() {
                     return 1
                 fi
                 
+                local final_file
+                if [[ -f "${dest_file}.final_path" ]]; then
+                    final_file=$(cat "${dest_file}.final_path")
+                else
+                    final_file="$dest_file"  # fallback to original if no final_path file
+                fi
+
                 # Calculate and store checksum
                 local disk_checksum
-                disk_checksum=$(calculate_checksum "$dest_file")
+                disk_checksum=$(calculate_checksum "$final_file")
                 echo "$disk_checksum" | sudo tee "${dest_file}.md5" >/dev/null
                 
                 # Store original disk path for restore
@@ -894,7 +907,7 @@ restore_vm() {
     # Estimate required space for restore
     local backup_size_mb
     backup_size_mb=$(du -m "$backup_path" | tail -1 | cut -f1)
-    local required_space_mb=$((backup_size_mb * 2 + MIN_FREE_SPACE_MB))  # 2x for safety
+    local required_space_mb=$((backup_size_mb * 3 + MIN_FREE_SPACE_MB))  # 3x for safety (compressed -> decompressed)
     
     if ! check_disk_space "$VM_IMAGES_DIR" "$required_space_mb"; then
         release_vm_lock "$vm_name"
@@ -906,46 +919,94 @@ restore_vm() {
     if [[ -f "$backup_path/disk_paths.txt" ]]; then
         local line_number=1
         while IFS= read -r original_path; do
-            local backup_disk_files
-            backup_disk_files=($(find "$backup_path" -name "*.qcow2" -o -name "*.img" -o -name "*.raw"))
+            # Find all potential compressed files for this disk
+            local disk_base=$(basename "$original_path")
+            local compressed_files=()
             
-            if [[ $line_number -le ${#backup_disk_files[@]} && -n "${backup_disk_files[$((line_number-1))]:-}" ]]; then
-                local backup_disk="${backup_disk_files[$((line_number-1))]}"
-                local target_dir
-                target_dir=$(dirname "$original_path")
-                
-                # Create target directory if it doesn't exist
-                sudo mkdir -p "$target_dir"
-                
-                log "Restoring $(basename "$backup_disk") to $original_path"
-                
-                # Verify backup disk checksum before restore
-                local checksum_file="${backup_disk}.md5"
-                if [[ -f "$checksum_file" ]]; then
-                    local expected_checksum
-                    expected_checksum=$(cat "$checksum_file")
-                    if ! verify_file_integrity "$backup_disk" "$expected_checksum"; then
-                        error "Backup disk integrity check failed"
+            # Check for all supported compression formats
+            for f in "$backup_path/${disk_base%.*}".*; do
+                if [[ "$f" == *.gz || "$f" == *.xz || "$f" == *.zst || "$f" == *.qcow2 || "$f" == *.raw ]]; then
+                    compressed_files+=("$f")
+                fi
+            done
+            
+            # Also check for sparse qcow2
+            if [[ -f "$backup_path/$disk_base" ]]; then
+                compressed_files+=("$backup_path/$disk_base")
+            fi
+            
+            if [[ ${#compressed_files[@]} -eq 0 ]]; then
+                error "No backup disk found for $original_path"
+                release_vm_lock "$vm_name"
+                return 1
+            fi
+            
+            local backup_disk="${compressed_files[0]}"
+            local target_dir
+            target_dir=$(dirname "$original_path")
+            
+            # Create target directory if it doesn't exist
+            sudo mkdir -p "$target_dir"
+            
+            log "Restoring $(basename "$backup_disk") to $original_path"
+            
+            # Verify backup disk checksum before restore
+            local checksum_file="${backup_disk}.md5"
+            if [[ -f "$checksum_file" ]]; then
+                local expected_checksum
+                expected_checksum=$(cat "$checksum_file")
+                if ! verify_file_integrity "$backup_disk" "$expected_checksum"; then
+                    error "Backup disk integrity check failed"
+                    release_vm_lock "$vm_name"
+                    return 1
+                fi
+            fi
+            
+            # Handle different compression formats
+            case "$backup_disk" in
+                *.gz)
+                    info "Decompressing gzip file..."
+                    if ! sudo gzip -dc "$backup_disk" | sudo dd of="$original_path" bs=1M status=progress; then
+                        error "Failed to decompress gzip file"
                         release_vm_lock "$vm_name"
                         return 1
                     fi
-                fi
-                
-                if ! sudo qemu-img convert -p "$backup_disk" "$original_path" 2>&1 | tee >(sudo tee -a "$LOG_FILE" >/dev/null); then
-                    error "Failed to restore disk image: $backup_disk"
-                    release_vm_lock "$vm_name"
-                    return 1
-                fi
-                
-                # Validate restored disk
-                if ! sudo qemu-img info "$original_path" >/dev/null 2>&1; then
-                    error "Restored disk image appears to be corrupted: $original_path"
-                    release_vm_lock "$vm_name"
-                    return 1
-                fi
-                
-                sudo chown qemu:qemu "$original_path" 2>/dev/null || true
+                    ;;
+                *.xz)
+                    info "Decompressing xz file..."
+                    if ! sudo xz -dc "$backup_disk" | sudo dd of="$original_path" bs=1M status=progress; then
+                        error "Failed to decompress xz file"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
+                    ;;
+                *.zst)
+                    info "Decompressing zstd file..."
+                    if ! sudo zstd -dc "$backup_disk" | sudo dd of="$original_path" bs=1M status=progress; then
+                        error "Failed to decompress zstd file"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
+                    ;;
+                *)
+                    # Assume uncompressed qcow2 or raw file
+                    info "Copying uncompressed disk image..."
+                    if ! sudo qemu-img convert -p "$backup_disk" "$original_path" 2>&1 | tee >(sudo tee -a "$LOG_FILE" >/dev/null); then
+                        error "Failed to restore disk image: $backup_disk"
+                        release_vm_lock "$vm_name"
+                        return 1
+                    fi
+                    ;;
+            esac
+            
+            # Validate restored disk
+            if ! sudo qemu-img info "$original_path" >/dev/null 2>&1; then
+                error "Restored disk image appears to be corrupted: $original_path"
+                release_vm_lock "$vm_name"
+                return 1
             fi
+            
+            sudo chown qemu:qemu "$original_path" 2>/dev/null || true
             ((line_number++))
         done < "$backup_path/disk_paths.txt"
     fi
@@ -1045,16 +1106,16 @@ USAGE:
 
 OPTIONS:
     --all                                Backup all VMs
-    --overwrite                         Overwrite existing VM during restore
-    --backup-dir DIR                    Set custom backup directory
+    --overwrite                          Overwrite existing VM during restore
+    --backup-dir DIR                     Set custom backup directory
 
 EXAMPLES:
-    $0 backup myvm                      Backup single VM
-    $0 backup --all                     Backup all VMs
+    $0 backup myvm                       Backup single VM
+    $0 backup --all                      Backup all VMs
     $0 restore myvm /backup/vms/myvm_20240115_143022
     $0 restore myvm /backup/vms/myvm_20240115_143022 --overwrite
-    $0 list                             List all backups
-    $0 list myvm                        List backups for specific VM
+    $0 list                              List all backups
+    $0 list myvm                         List backups for specific VM
 
 FEATURES:
     - Disk space validation before backup

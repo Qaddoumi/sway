@@ -884,7 +884,7 @@ get_vm_list() {
     if [[ -n "${1:-}" ]]; then
         echo "$1"
     else
-        virsh_with_timeout "$VIRSH_TIMEOUT" list --all --name | grep -v '^
+        virsh_with_timeout "$VIRSH_TIMEOUT" list --all --name | grep -v '^$'
     fi
 }
 

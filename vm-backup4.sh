@@ -1,0 +1,1 @@
+sudo qemu-img convert -p -O qcow2 -c /run/media/moh/Mkohaa4TB/archBackup/vms/002-win11.qcow2 /var/lib/libvirt/images/002-win11.qcow2

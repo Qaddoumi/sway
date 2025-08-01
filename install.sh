@@ -559,6 +559,18 @@ echo -e "${green}Make sure to add the following line to your VM XML configuratio
 echo -e "${green}You can also use the following command to check if the shared memory device is created:${no_color}"
 echo -e "${green}ls -l /dev/shm/looking-glass*${no_color}"
 
+tee ~/.local/share/applications/looking-glass-fullscreen.desktop << 'EOF'
+[Desktop Entry]
+Name=Looking Glass Client (Fullscreen)
+Comment=View KVM guest desktop in fullscreen
+Exec=looking-glass-client -F
+Icon=looking-glass-client
+Terminal=false
+Type=Application
+Categories=Utility;System;
+EOF
+sudo chmod +x ~/.local/share/applications/looking-glass-fullscreen.desktop
+
 echo -e "${green}Setting up looking-glass completed${no_color}"
 
 echo -e "${blue}==================================================\n==================================================${no_color}"

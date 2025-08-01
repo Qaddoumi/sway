@@ -262,8 +262,16 @@ if [ -n "$VFIO_IDS" ]; then
                 #exit 1
             fi
             
-            # Find boot entries
-            boot_entries=($(sudo find "$entries_dir" -name "*.conf" 2>/dev/null))
+            # Get all .conf files (including backups and fallbacks)
+            all_entries=($(sudo find "$entries_dir" -name "*.conf" 2>/dev/null))
+
+            # Filter out backups and fallbacks
+            boot_entries=()
+            for entry in "${all_entries[@]}"; do
+                if [[ "$(basename "$entry")" != *".backup."* && "$(basename "$entry")" != *"-fallback.conf" ]]; then
+                    boot_entries+=("$entry")
+                fi
+            done
             
             if [[ ${#boot_entries[@]} -eq 0 ]]; then
                 echo -e "${red}No boot entries found in $entries_dir${no_color}"

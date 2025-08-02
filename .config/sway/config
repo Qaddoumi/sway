@@ -171,13 +171,15 @@ exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 #exec wl-paste --type image --watch cliphist store &
 
 # NetworkManager
-#exec nm-applet
+exec nm-applet
 
 ## Waybar
 #exec waybar
 
 ## dunst Notification
-exec_always killall dunst && dunst &
+#exec_always killall dunst && dunst &
+## SwayNC Notification & system tray
+exec_always killall -q swaync && swaync -c ~/.config/swaync/config.json
 
 ## Autostart Applications
 #exec bash -c 'sleep 4; swaymsg "workspace 1; exec kitty"'

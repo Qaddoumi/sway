@@ -99,7 +99,8 @@ echo -e "${green}Installing Sway and related packages${no_color}"
 sudo pacman -S --needed --noconfirm sway # Sway window manager
 sudo pacman -S --needed --noconfirm waybar # Status bar for sway
 sudo pacman -S --needed --noconfirm wofi # Application launcher
-sudo pacman -S --needed --noconfirm dunst # Notification daemon
+#sudo pacman -S --needed --noconfirm dunst # Notification daemon
+sudo pacman -S --needed --noconfirm swaync # Notification daemon and system tray for sway
 sudo pacman -S --needed --noconfirm kitty # Terminal emulator
 sudo pacman -S --needed --noconfirm swayidle # Idle management for sway
 sudo pacman -S --needed --noconfirm swaylock # Screen locker for sway
@@ -125,6 +126,7 @@ sudo pacman -S --needed --noconfirm imv # image viewer
 sudo pacman -S --needed --noconfirm file-roller # Handling archive files
 sudo pacman -S --needed --noconfirm libxml2 # XML parsing library
 sudo pacman -S --needed --noconfirm pv # progress bar in terminal
+sudo pacman -S --needed --noconfirm network-manager-applet # Network management applet
 #sudo pacman -S --needed --noconfirm flameshot # Screenshot tool
 
 yay -S --needed --noconfirm google-chrome || echo -e "${red}Failed to install google-chrome${no_color}" # Web browser
@@ -592,7 +594,7 @@ if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/dunst ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass
+sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/swaync ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass
 sudo mkdir -p ~/.config && sudo cp -r ~/sway/.config/* ~/.config/
 sudo rm -rf ~/sway
 

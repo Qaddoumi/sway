@@ -83,7 +83,9 @@
 
     "tray": {
         "icon-size": 18,
-        "spacing": 5
+        "spacing": 5,
+        "show-passive-items": true,
+        "tray-output": "all"
     },
 
     "custom/dunst": {

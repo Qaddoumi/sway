@@ -96,7 +96,8 @@
     //     "on-click-right": "dunstctl close-all",
     //     "on-scroll-up": "dunstctl history-pop",
     //     "on-scroll-down": "dunstctl context",
-    //     "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
+    //     "tooltip": true,
+    //     "tooltip-format": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
     // },
 
     "custom/swaync": {
@@ -107,7 +108,8 @@
         "on-click-right": "swaync-client -C", // Close all
         "on-scroll-up": "swaync-client -op", // Open panel (shows history)
         "on-scroll-down": "swaync-client -t", // Toggle Do Not Disturb
-        "tooltip": "Left click: dismiss latest\nRight click: dismiss all\nScroll up: show history\nScroll down: toggle DND",
+        "tooltip": true,
+        "tooltip-format": "Left click: dismiss latest\nRight click: dismiss all\nScroll up: show history\nScroll down: toggle DND",
         "restart-interval": 1 // Ensures smooth updates
     },
 

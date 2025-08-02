@@ -104,12 +104,10 @@
         "format": " {}",
         "exec": "swaync-client -c", // Count waiting notifications
         "interval": 1,
-        "on-click": "swaync-client -d", // Dismiss latest
+        "on-click": "swaync-client -op", // Open panel (shows history)
         "on-click-right": "swaync-client -C", // Close all
-        "on-scroll-up": "swaync-client -op", // Open panel (shows history)
-        "on-scroll-down": "swaync-client -t", // Toggle Do Not Disturb
         "tooltip": true,
-        "tooltip-format": "Left click: dismiss latest\nRight click: dismiss all\nScroll up: show history\nScroll down: toggle DND",
+        "tooltip-format": "Left click: Open panel (shows history)\nRight click: dismiss all",
         "restart-interval": 1 // Ensures smooth updates
     },
 

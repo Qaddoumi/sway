@@ -74,7 +74,7 @@ button:hover {
 #mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray, #custom-swaync, #custom-hijri,
+#idle_inhibitor, #tray, #custom-notification, #custom-hijri,
 #custom-prayer, #custom-power, #custom-player.Stopped,
 #custom-player.Playing, #custom-player.Paused{
     padding: 0 10px;
@@ -86,7 +86,7 @@ button:hover {
 #custom-prayer,
 #custom-player.Stopped,
 #custom-power,
-#custom-swaync {
+#custom-notification {
     background-color: #bbccdd;
 }
 

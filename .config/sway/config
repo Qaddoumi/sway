@@ -171,7 +171,8 @@ exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 #exec wl-paste --type image --watch cliphist store &
 
 # NetworkManager
-exec nm-applet
+#exec nm-applet
+exec_always killall -q nm-applet && nm-applet --indicator 2> /dev/null &
 
 ## Waybar
 #exec waybar

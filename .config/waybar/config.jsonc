@@ -6,7 +6,7 @@
 
     "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad", "sway/window"],
     "modules-center": [],
-    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "custom/player", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/dunst", "custom/power", "tray"],
+    "modules-right": ["idle_inhibitor", "memory", "cpu", "disk", "battery", "custom/player", "network", "backlight", "temperature", "custom/prayer", "custom/hijri", "clock", "custom/swaync", "custom/power", "tray"],
     "modules-right-alt": ["custom/uptime", "custom/updates", "custom/weather", "pulseaudio"],
 
     "sway/workspaces": {
@@ -88,15 +88,27 @@
         "tray-output": "all"
     },
 
-    "custom/dunst": {
+    // "custom/dunst": {
+    //     "format": " {}",
+    //     "exec": "dunstctl count waiting",
+    //     "interval": 1,
+    //     "on-click": "dunstctl close",
+    //     "on-click-right": "dunstctl close-all",
+    //     "on-scroll-up": "dunstctl history-pop",
+    //     "on-scroll-down": "dunstctl context",
+    //     "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
+    // },
+
+    "custom/swaync": {
         "format": " {}",
-        "exec": "dunstctl count waiting",
+        "exec": "swaync-client -c", // Count waiting notifications
         "interval": 1,
-        "on-click": "dunstctl close",
-        "on-click-right": "dunstctl close-all",
-        "on-scroll-up": "dunstctl history-pop",
-        "on-scroll-down": "dunstctl context",
-        "tooltip": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
+        "on-click": "swaync-client -d", // Dismiss latest
+        "on-click-right": "swaync-client -C", // Close all
+        "on-scroll-up": "swaync-client -op", // Open panel (shows history)
+        "on-scroll-down": "swaync-client -t", // Toggle Do Not Disturb
+        "tooltip": "Left click: dismiss latest\nRight click: dismiss all\nScroll up: show history\nScroll down: toggle DND",
+        "restart-interval": 1 // Ensures smooth updates
     },
 
     "clock": {

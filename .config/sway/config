@@ -2,6 +2,7 @@
 #
 # Read `man 5 sway` for a complete reference.
 
+# Setting the cursor theme and size
 seat * xcursor_theme capitaine-cursors 32
 
 ### Variables

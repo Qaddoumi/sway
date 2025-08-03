@@ -606,7 +606,9 @@ if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/swaync ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass ~/.config/gtk-3.0 ~/.config/gtk-4.0
+sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/swaync \
+    ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass \
+    ~/.config/gtk-3.0 ~/.config/gtk-4.0
 sudo mkdir -p ~/.config && sudo cp -r ~/sway/.config/* ~/.config/
 sudo rm -rf ~/sway
 

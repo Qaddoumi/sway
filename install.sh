@@ -177,6 +177,18 @@ fc-cache -fv
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}Setting Dark theme for GTK applications${no_color}"
+sudo pacman -S --needed --noconfirm materia-gtk-theme # Material Design GTK theme
+sudo pacman -S --needed --noconfirm papirus-icon-theme # Icon theme
+sudo pacman -S --needed --noconfirm capitaine-cursors # Cursor theme
+
+echo -e "${green}Showing available themes${no_color}"
+ls /usr/share/themes/
+echo -e "${green}Available icon and cursor themes:${no_color}"
+ls /usr/share/icons/
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}Installing and configuring Qemu/Libvirt for virtualization${no_color}"
 sudo pacman -S --needed --noconfirm qemu-full # Full QEMU package with all features
 sudo pacman -S --needed --noconfirm qemu-img # QEMU disk image utility: provides create, convert, modify, and snapshot, offline disk images
@@ -206,18 +218,6 @@ sudo usermod -aG input libvirt-qemu || true
 echo -e "${green}Starting and autostarting the default network for libvirt${no_color}"
 sudo virsh net-start default || true
 sudo virsh net-autostart default || true
-
-echo -e "${blue}==================================================\n==================================================${no_color}"
-
-echo -e "${green}Setting Dark theme for GTK applications${no_color}"
-sudo pacman -S --needed --noconfirm materia-gtk-theme # Material Design GTK theme
-sudo pacman -S --needed --noconfirm papirus-icon-theme # Icon theme
-sudo pacman -S --needed --noconfirm capitaine-cursors # Cursor theme
-
-echo -e "${green}Showing available themes${no_color}"
-ls /usr/share/themes/
-echo -e "${green}Available icon and cursor themes:${no_color}"
-ls /usr/share/icons/
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 

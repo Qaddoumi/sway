@@ -1,0 +1,48 @@
+- [ ]  pacman -Ss conky
+extra/conky 1.22.2-1
+    Light-weight system monitor for X, Wayland, and other things, too
+extra/conky-manager2 2.7-2
+    GUI for managing Conky config files with options to browse and edit themes
+
+- [ ] pacman -Ss cups
+extra/apcupsd 3.14.14-8
+    Power mangement and controlling most of APC's UPS models
+extra/bluez-cups 5.83-1
+    CUPS printer backend for Bluetooth printers
+extra/cups 2:2.4.12-2
+    OpenPrinting CUPS - daemon package
+extra/cups-browsed 2.1.1-1
+    a helper daemon to browse the network for remote CUPS queues and IPP network printers
+extra/cups-filters 2.0.1-2
+    OpenPrinting CUPS Filters
+extra/cups-pdf 3.0.2-1
+    PDF printer for cups
+extra/cups-pk-helper 0.2.7-2
+    A helper that makes system-config-printer use PolicyKit
+extra/libcups 2:2.4.12-2 [installed]
+    OpenPrinting CUPS - client libraries and headers
+extra/libcupsfilters 2.1.1-2
+    OpenPrinting CUPS Filters - contains all the code of the filters of the former cups-filters package as library functions
+extra/pappl 1.4.9-1
+    a simple C-based framework/library for developing CUPS Printer Applications
+extra/python-pycups 2.0.4-3
+    Python bindings for libcups
+extra/splix 2.0.1-1
+    CUPS drivers for SPL (Samsung Printer Language) printers
+extra/system-config-printer 1.5.18-5
+    A CUPS printer configuration tool and status applet
+
+- [ ] pacman -Ss acpi
+extra/acpi 1.7-4
+    Client for battery, power, and thermal readings
+extra/acpi_call 1.2.2-291
+    A linux kernel module that enables calls to ACPI methods through /proc/acpi/call
+extra/acpi_call-dkms 1.2.2-2
+    A linux kernel module that enables calls to ACPI methods through /proc/acpi/call - module sources
+extra/acpi_call-lts 1.2.2-273
+    A linux kernel module that enables calls to ACPI methods through /proc/acpi/call
+extra/acpica 20250404-1
+    ACPI tools, including Intel ACPI Source Language compiler
+extra/acpid 2.0.34-2
+    A daemon for delivering ACPI power management events with netlink support
+

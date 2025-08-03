@@ -209,6 +209,18 @@ sudo virsh net-autostart default || true
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}Setting Dark theme for GTK applications${no_color}"
+sudo pacman -S --needed --noconfirm materia-gtk-theme # Material Design GTK theme
+sudo pacman -S --needed --noconfirm papirus-icon-theme # Icon theme
+sudo pacman -S --needed --noconfirm capitaine-cursors # Cursor theme
+
+echo -e "${green}Showing available themes${no_color}"
+ls /usr/share/themes/
+echo -e "${green}Available icon and cursor themes:${no_color}"
+ls /usr/share/icons/
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 bash <(curl -sL https://raw.githubusercontent.com/Qaddoumi/sway/main/gpu-passthrough.sh)
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
@@ -594,7 +606,7 @@ if ! git clone --depth 1 https://github.com/Qaddoumi/sway.git ~/sway; then
     echo "Failed to clone repository" >&2
     exit 1
 fi
-sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/swaync ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass
+sudo rm -rf ~/.config/sway ~/.config/waybar ~/.config/wofi ~/.config/kitty ~/.config/swaync ~/.config/kanshi ~/.config/oh-my-posh ~/.config/fastfetch ~/.config/mimeapps.list ~/.config/looking-glass ~/.config/gtk-3.0 ~/.config/gtk-4.0
 sudo mkdir -p ~/.config && sudo cp -r ~/sway/.config/* ~/.config/
 sudo rm -rf ~/sway
 

@@ -179,7 +179,7 @@ echo -e "${blue}==================================================\n============
 
 echo -e "${green}Setting Dark theme for GTK applications${no_color}"
 sudo pacman -S --needed --noconfirm materia-gtk-theme # Material Design GTK theme
-sudo pacman -S --needed --noconfirm papirus-icon-theme # Icon theme
+#sudo pacman -S --needed --noconfirm papirus-icon-theme # Icon theme
 sudo pacman -S --needed --noconfirm capitaine-cursors # Cursor theme
 
 echo -e "${green}Showing available themes${no_color}"

@@ -573,6 +573,7 @@ echo -e "${green}Make sure to add the following line to your VM XML configuratio
 echo -e "${green}You can also use the following command to check if the shared memory device is created:${no_color}"
 echo -e "${green}ls -l /dev/shm/looking-glass*${no_color}"
 
+echo -e "${green}Creating desktop entries for Looking Glass Client to run in fullscreen${no_color}"
 tee ~/.local/share/applications/looking-glass-fullscreen.desktop << 'EOF'
 [Desktop Entry]
 Name=Looking Glass Client (Fullscreen)

@@ -88,32 +88,9 @@
         "tray-output": "all"
     },
 
-    // "custom/dunst": {
-    //     "format": " {}",
-    //     "exec": "dunstctl count waiting",
-    //     "interval": 1,
-    //     "on-click": "dunstctl close",
-    //     "on-click-right": "dunstctl close-all",
-    //     "on-scroll-up": "dunstctl history-pop",
-    //     "on-scroll-down": "dunstctl context",
-    //     "tooltip": true,
-    //     "tooltip-format": "Left click: dismiss one\nRight click: dismiss all\nScroll up: show history\nScroll down: context menu"
-    // },
-
-    "custom/swaync": {
-        "format": " {}",
-        "exec": "swaync-client -c", // Count waiting notifications
-        "interval": 1,
-        "on-click": "swaync-client -op", // Open panel (shows history)
-        "on-click-right": "swaync-client -C", // Close all
-        "tooltip": true,
-        "tooltip-format": "Left click: Open panel (shows history)\nRight click: dismiss all",
-        "restart-interval": 1 // Ensures smooth updates
-    },
-
     "custom/notification": {
         "tooltip": false,
-        "format": "{icon} {}",
+        "format": "{icon} {text}",
         "format-icons": {
             "notification": "<span foreground='red'><sup></sup></span>",
             "none": "",

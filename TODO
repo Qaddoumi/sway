@@ -46,3 +46,5 @@ extra/acpica 20250404-1
 extra/acpid 2.0.34-2
     A daemon for delivering ACPI power management events with netlink support
 
+- [ ] clipman
+- [ ] cliphist

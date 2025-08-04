@@ -163,9 +163,6 @@ font pango:JetBrainsMono Nerd Font Propo 12
 # Automatically manage display configurations
 exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 
-## Flameshot
-#exec flameshot
-
 ## Emacs Daemon
 #exec /usr/bin/emacs --daemon
 

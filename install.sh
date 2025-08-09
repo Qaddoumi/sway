@@ -131,6 +131,7 @@ sudo pacman -S --needed --noconfirm grim # Screenshot tool
 sudo mkdir -p ~/Screenshots || true
 sudo pacman -S --needed --noconfirm slurp # Selection tool for Wayland
 sudo pacman -S --needed --noconfirm wl-clipboard # Clipboard management for Wayland
+sudo pacman -S --needed --noconfirm cliphist # Clipboard history manager
 
 yay -S --needed --noconfirm google-chrome || echo -e "${red}Failed to install google-chrome${no_color}" # Web browser
 yay -S --needed --noconfirm visual-studio-code-bin || echo -e "${red}Failed to install visual-studio-code-bin${no_color}" # Visual Studio Code

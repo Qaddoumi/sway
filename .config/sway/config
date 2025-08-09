@@ -172,13 +172,11 @@ exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 
 # NetworkManager
 #exec nm-applet
-exec_always killall -q nm-applet && nm-applet --indicator 2> /dev/null &
+exec_always pkill -x nm-applet 2> /dev/null; nm-applet --indicator 2> /dev/null &
 
 ## Waybar
 #exec waybar
 
-## dunst Notification
-#exec_always killall dunst && dunst &
 ## SwayNC Notification & system tray
 exec_always killall -q swaync && swaync -c ~/.config/swaync/config.json
 
@@ -416,7 +414,7 @@ bindsym $mod+r mode "resize"
     bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
     bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
     # Special key to take a screenshot with grim
-    bindsym Print exec grim -g "$(slurp)" - | tee ~/Screenshots/$(date +%s).png | wl-copy && notify-send "Screenshot taken" || notify-send "Screenshot failed"
+    bindsym Print exec grim -g "$(slurp)" - | tee ~/Screenshots/$(date +%s).png | wl-copy && notify-send "Screenshot taken" "'Saved at ~/Screenshots and the clipboard'" || notify-send "Screenshot failed"
 #
 # Status Bar:
 #

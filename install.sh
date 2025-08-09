@@ -171,6 +171,17 @@ source ~/.bashrc || true
 
 echo -e "${blue}==================================================\n==================================================${no_color}"
 
+echo -e "${green}Insuring XDG_RUNTIME_DIR is set so application like wl-clipboard works properly${no_color}"
+if grep -q "export XDG_RUNTIME_DIR=/run/user/$(id -u)" "$BASHRC_FILE"; then
+    echo -e "${green}XDG_RUNTIME_DIR is already set in .bashrc${no_color}"
+else
+    echo -e "${green}Adding XDG_RUNTIME_DIR to .bashrc...${no_color}"
+    echo "export XDG_RUNTIME_DIR=/run/user/\$(id -u)" >> "$BASHRC_FILE"
+    echo -e "${green}Successfully added to .bashrc${no_color}"
+fi
+
+echo -e "${blue}==================================================\n==================================================${no_color}"
+
 echo -e "${green}Installing fonts${no_color}"
 
 sudo pacman -S --needed --noconfirm ttf-jetbrains-mono-nerd # Nerd font for JetBrains Mono

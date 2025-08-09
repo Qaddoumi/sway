@@ -167,11 +167,11 @@ exec_always bash -c 'sleep 1; pkill kanshi 2>/dev/null || true; kanshi'
 #exec /usr/bin/emacs --daemon
 
 ## Clipboard
-exec wl-paste --type text --watch cliphist store &
-exec wl-paste --type image --watch cliphist store &
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
 
 # NetworkManager
-exec_always pkill -x nm-applet 2> /dev/null; nm-applet --indicator 2> /dev/null &
+exec_always pkill -x nm-applet 2> /dev/null; nm-applet --indicator 2> /dev/null
 
 ## Waybar
 #exec waybar
@@ -230,8 +230,6 @@ input type:keyboard {
     #bindsym $mod+s exec rofi -show emoji -modi emoji -matching regex -sorting-method levenshtein
 
     # Clipboard
-    #bindsym $mod+v exec cliphist list | rofi -dmenu -p "Clipboard" -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy
-    #bindsym $mod+v exec cliphist list | wofi --dmenu | cliphist decode | wl-copy
     #bindsym $mod+v exec cliphist list | wofi --dmenu --prompt "Search the clipboard..." | cliphist decode | wl-copy
     #bindsym $mod+Shift+v exec cliphist list | wofi --dmenu --prompt "Delete from clipboard..." | cliphist delete
     bindsym $mod+v exec ~/.config/sway/scripts/clipboard-menu.sh

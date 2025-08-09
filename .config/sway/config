@@ -231,7 +231,11 @@ input type:keyboard {
 
     # Clipboard
     #bindsym $mod+v exec cliphist list | rofi -dmenu -p "Clipboard" -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy
-    bindsym $mod+v exec cliphist list | wofi --dmenu | cliphist decode | wl-copy
+    #bindsym $mod+v exec cliphist list | wofi --dmenu | cliphist decode | wl-copy
+    #bindsym $mod+v exec cliphist list | wofi --dmenu --prompt "Search the clipboard..." | cliphist decode | wl-copy
+    #bindsym $mod+Shift+v exec cliphist list | wofi --dmenu --prompt "Delete from clipboard..." | cliphist delete
+    bindsym $mod+v exec ~/.config/sway/scripts/clipboard-menu.sh
+
 
     # Lock
     bindsym $mod+shift+t exec $lock
